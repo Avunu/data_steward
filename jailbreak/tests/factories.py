@@ -1,18 +1,15 @@
 # Copyright (c) 2026, Avunu LLC and contributors
 # For license information, please see license.txt
 
-"""Factories that return real, inserted documents - see
-`little_cocalico.tests.factories` for the pattern this copies. Everything
-here is prefixed `_JB Test` so it is recognisable in a database someone is
+"""Factories that return real, inserted documents. Everything here is
+prefixed `_JB Test` so it is recognisable in a database someone is
 debugging, and self-contained: `jailbreak` is a generic Frappe/ERPNext
-add-on, not a `little_cocalico` module, so these do not import
-`little_cocalico`'s factories even though both apps happen to share this
-bench's test site.
+add-on, so these do not import any other app's factories even when apps
+share a bench's test site.
 
-The `Little Cocalico` company (created by
-`little_cocalico.tests.seed_test_site`) is reused as the company these
-documents post against, purely because it is the one company this test site
-has - not because `jailbreak` has any opinion about it.
+Documents post against the test site's default company (see `company()`),
+purely because a test site needs one - not because `jailbreak` has any
+opinion about it.
 """
 
 from __future__ import annotations
@@ -22,8 +19,15 @@ from typing import Any, cast
 import frappe
 from frappe.utils import add_days, nowdate
 
-COMPANY = "Little Cocalico"
 PREFIX = "_JB Test"
+
+
+def company() -> str:
+	"""The test site's default company, or its only company if no default is set."""
+	return cast(
+		str,
+		frappe.defaults.get_global_default("company") or frappe.db.get_value("Company", {}, "name"),
+	)
 
 
 def _insert(doc: Any, *, submit: bool = False) -> Any:
@@ -115,12 +119,12 @@ def make_sales_order(
 	reference document to attach a Payment Request to."""
 	customer = customer or make_customer().name
 	item_code = item_code or make_item().name
-	warehouse = cast(str, frappe.db.get_value("Warehouse", {"company": COMPANY, "is_group": 0}, "name"))
+	warehouse = cast(str, frappe.db.get_value("Warehouse", {"company": company(), "is_group": 0}, "name"))
 	so = frappe.get_doc(
 		{
 			"doctype": "Sales Order",
 			"customer": customer,
-			"company": COMPANY,
+			"company": company(),
 			"delivery_date": add_days(nowdate(), 7),
 			"items": [{"item_code": item_code, "qty": 1, "rate": 100, "warehouse": warehouse}],
 		}
@@ -152,13 +156,13 @@ def _bank_gl_account(name: str = f"{PREFIX} Bank") -> str:
 		return full_name
 	parent = cast(
 		str,
-		frappe.db.get_value("Account", {"company": COMPANY, "account_type": "Bank", "is_group": 1}, "name"),
+		frappe.db.get_value("Account", {"company": company(), "account_type": "Bank", "is_group": 1}, "name"),
 	)
 	acc = _insert(
 		frappe.get_doc(
 			{
 				"doctype": "Account",
-				"company": COMPANY,
+				"company": company(),
 				"account_name": name,
 				"parent_account": parent,
 				"account_type": "Bank",
@@ -184,7 +188,7 @@ def make_bank_account(name: str = f"{PREFIX} Checking") -> Any:
 				"account_name": name,
 				"bank": bank_name,
 				"account": _bank_gl_account(),
-				"company": COMPANY,
+				"company": company(),
 			}
 		)
 	)
@@ -210,7 +214,7 @@ def make_journal_entry(*, amount: float = 25, **fields: Any) -> Any:
 	account1 = _bank_gl_account()
 	account2 = cast(
 		str,
-		frappe.db.get_value("Account", {"company": COMPANY, "is_group": 0, "account_type": "Cash"}, "name"),
+		frappe.db.get_value("Account", {"company": company(), "is_group": 0, "account_type": "Cash"}, "name"),
 	)
 	return _insert(
 		frappe.get_doc(
@@ -218,7 +222,7 @@ def make_journal_entry(*, amount: float = 25, **fields: Any) -> Any:
 				"doctype": "Journal Entry",
 				"voucher_type": "Journal Entry",
 				"posting_date": fields.pop("posting_date", nowdate()),
-				"company": COMPANY,
+				"company": company(),
 				"accounts": [
 					{"account": account1, "debit_in_account_currency": amount},
 					{"account": account2, "credit_in_account_currency": amount},
@@ -246,7 +250,7 @@ def make_cleared_journal_entry(*, clearance_date: str = "2020-02-02", amount: fl
 
 
 def make_note_with_version(*, original: str = "<p>original</p>", changed: str = "<p>changed</p>") -> Any:
-	"""A real Note (`track_changes=1`, simple, no `little_cocalico`
+	"""A real Note (`track_changes=1`, simple, no other-app
 	dependency) edited once, so Frappe's own version-tracking writes a real
 	Version row - the diff-shaped `data` `Version.restore()` actually has to
 	deal with, not a hand-built one.
@@ -272,7 +276,7 @@ def make_payment_entry(*, reference_no: str = "_JB-PROBE-1", **fields: Any) -> A
 	paid_from = _bank_gl_account()
 	paid_to = cast(
 		str,
-		frappe.db.get_value("Account", {"company": COMPANY, "is_group": 0, "account_type": "Cash"}, "name"),
+		frappe.db.get_value("Account", {"company": company(), "is_group": 0, "account_type": "Cash"}, "name"),
 	)
 	amount = fields.pop("paid_amount", 100)
 	return _insert(
@@ -281,7 +285,7 @@ def make_payment_entry(*, reference_no: str = "_JB-PROBE-1", **fields: Any) -> A
 				"doctype": "Payment Entry",
 				"payment_type": "Internal Transfer",
 				"posting_date": fields.pop("posting_date", nowdate()),
-				"company": COMPANY,
+				"company": company(),
 				"paid_from": fields.pop("paid_from", paid_from),
 				"paid_to": fields.pop("paid_to", paid_to),
 				"paid_amount": amount,
