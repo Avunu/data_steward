@@ -18,8 +18,8 @@ gives you::
             with self.capability_enabled("item_convert_to_variant"):
                 ...
 
-Commits are suppressed the same way `little_cocalico`'s harness does it
-(docs/conventions/Testing on Live Databases.md) - several of the functions
+Commits are suppressed the same way our other apps' live-database test
+harnesses do it - several of the functions
 under test call `frappe.db.commit()` themselves, and `bulk_rename` (behind
 `bulk_merge`) commits per row.
 """
