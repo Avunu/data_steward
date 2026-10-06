@@ -12,6 +12,8 @@
   "item_convert_to_variant",
   "versions_column",
   "version_restore",
+  "files_column",
+  "file_merge",
   "accounting_features_section",
   "sales_invoice_column",
   "sales_invoice_calculate_outstanding",
@@ -60,6 +62,11 @@
    "label": "Versions"
   },
   {
+   "fieldname": "files_column",
+   "fieldtype": "Column Break",
+   "label": "Files"
+  },
+  {
    "fieldname": "sales_invoice_column",
    "fieldtype": "Column Break",
    "label": "Sales Invoice"
@@ -95,6 +102,12 @@
    "fieldname": "version_restore",
    "fieldtype": "Check",
    "label": "Allow Restore"
+  },
+  {
+   "default": "0",
+   "fieldname": "file_merge",
+   "fieldtype": "Check",
+   "label": "Allow File Merge"
   },
   {
    "default": "0",

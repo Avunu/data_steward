@@ -27,6 +27,11 @@ Jailbreak is a collection of various hacks, mods, and anti-features you probably
   - **List View**: Select versions and use "Restore" bulk action
   - **Form View**: Click "Restore" button on individual versions
 
+### 🔗 File Merge
+- **Description**: Merge files by replacing all references to one file with another, then deleting the original
+- **Location**: File form → Actions → "Merge Files"
+- **Usage**: Open a file, click "Merge Files" in the Actions menu, select the target file to merge into, and confirm the action
+
 ### 🖥️ Full Width Interface
 - **Description**: Automatically enables full-width container layout
 - **Usage**: Automatically applied when the app is installed (no capability gate)

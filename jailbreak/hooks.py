@@ -10,6 +10,7 @@ app_include_js = "jailbreak.bundle.js"
 doctype_js = {
 	"Item": "public/js/item.js",
 	"Version": "public/js/version.js",
+	"File": "public/js/file.js",
 	"Sales Invoice": "public/js/sales_invoice.js",
 	"Payment Request": "public/js/payment_request.js",
 	"Payment Entry": "public/js/payment_entry.js",
@@ -19,6 +20,7 @@ doctype_js = {
 
 doctype_list_js = {
 	"Version": "public/js/version_list.js",
+	"File": "public/js/file_list.js",
 }
 
 export_python_type_annotations = True
