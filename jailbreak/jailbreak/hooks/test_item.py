@@ -21,7 +21,7 @@ import frappe
 
 from jailbreak.jailbreak.hooks.item import convert_to_variant
 from jailbreak.tests import JailbreakIntegrationTestCase
-from jailbreak.tests.factories import make_item, make_item_template, set_capability
+from jailbreak.tests.factories import make_item, make_item_template, make_user, set_capability
 
 
 class TestConvertToVariant(JailbreakIntegrationTestCase):
@@ -82,3 +82,73 @@ class TestConvertToVariant(JailbreakIntegrationTestCase):
 		self.assertEqual(
 			[(a.attribute, a.attribute_value) for a in converted.attributes], [("Colour", "Red")]
 		)
+
+
+def _variant_comment_exists(name: str) -> bool:
+	return bool(
+		frappe.db.exists(
+			"Comment",
+			{
+				"reference_doctype": "Item",
+				"reference_name": name,
+				"comment_type": "Edit",
+				"content": ["like", "%Converted to a variant of%"],
+			},
+		)
+	)
+
+
+class TestConvertToVariantPermissions(JailbreakIntegrationTestCase):
+	"""An enabled capability is not enough on its own: the caller also needs
+	Item Manager or System Manager, plus write on the Item (checked before
+	the `variant_of` write, which bypasses permissions)."""
+
+	def test_user_without_role_raises_permission_error(self):
+		user = make_user("jb_test_item_stock_user@example.com", "Stock User")
+		item = make_item("_JB Test Convert Perm Denied")
+		template = make_item_template()
+
+		with self.capability_enabled("item_convert_to_variant"):
+			with self.set_user(user.name):
+				with self.assertRaises(frappe.PermissionError):
+					convert_to_variant(item.name, template.name, {"Colour": "Red"})
+
+		self.assertFalse(frappe.db.get_value("Item", item.name, "variant_of"))
+		self.assertFalse(_variant_comment_exists(item.name))
+
+	def test_system_manager_without_item_write_raises_permission_error(self):
+		"""The role gate is not a bypass of the Item's own permissions."""
+		user = make_user("jb_test_item_sysman_only@example.com", "System Manager")
+		item = make_item("_JB Test Convert Perm No Write")
+		template = make_item_template()
+
+		with self.capability_enabled("item_convert_to_variant"):
+			with self.set_user(user.name):
+				with self.assertRaises(frappe.PermissionError):
+					convert_to_variant(item.name, template.name, {"Colour": "Red"})
+
+		self.assertFalse(frappe.db.get_value("Item", item.name, "variant_of"))
+
+	def test_item_manager_succeeds_and_comments(self):
+		user = make_user("jb_test_item_manager@example.com", "Item Manager")
+		item = make_item("_JB Test Convert Perm Allowed")
+		template = make_item_template()
+
+		with self.capability_enabled("item_convert_to_variant"):
+			with self.set_user(user.name):
+				self.assertTrue(convert_to_variant(item.name, template.name, {"Colour": "Red"}))
+
+		self.assertEqual(frappe.db.get_value("Item", item.name, "variant_of"), template.name)
+		self.assertTrue(_variant_comment_exists(item.name))
+
+	def test_system_manager_succeeds_and_comments(self):
+		user = make_user("jb_test_item_sysman@example.com", "System Manager", "Item Manager")
+		item = make_item("_JB Test Convert Perm SysMan")
+		template = make_item_template()
+
+		with self.capability_enabled("item_convert_to_variant"):
+			with self.set_user(user.name):
+				self.assertTrue(convert_to_variant(item.name, template.name, {"Colour": "Red"}))
+
+		self.assertEqual(frappe.db.get_value("Item", item.name, "variant_of"), template.name)
+		self.assertTrue(_variant_comment_exists(item.name))

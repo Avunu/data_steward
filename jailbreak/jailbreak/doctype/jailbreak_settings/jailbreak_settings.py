@@ -8,31 +8,21 @@ from frappe import _
 from frappe.model.document import Document
 
 capability_name = Literal[
-	"global_bulk_merge", 
-	"global_unsubmit", 
-	"item_convert_to_variant", 
+	"global_bulk_merge",
+	"item_convert_to_variant",
 	"version_restore",
-	"sales_invoice_calculate_outstanding",
-	"payment_request_mark_paid",
-	"payment_request_reinitiate_charge", 
 	"payment_entry_set_clearance_date",
 	"journal_entry_manually_clear",
 	"journal_entry_remove_clearance",
-	"bank_transaction_change_date"
 ]
 
 capabilities = {
 	"global_bulk_merge": "Bulk Merge",
-	"global_unsubmit": "Unsubmit",
 	"item_convert_to_variant": "Convert to Variant",
 	"version_restore": "Version Restore",
-	"sales_invoice_calculate_outstanding": "Sales Invoice Calculate Outstanding",
-	"payment_request_mark_paid": "Payment Request Mark as Paid",
-	"payment_request_reinitiate_charge": "Payment Request Re-Initiate Charge",
 	"payment_entry_set_clearance_date": "Payment Entry Set Clearance Date",
 	"journal_entry_manually_clear": "Journal Entry Manually Clear",
 	"journal_entry_remove_clearance": "Journal Entry Remove Clearance",
-	"bank_transaction_change_date": "Bank Transaction Change Date",
 }
 
 
@@ -46,39 +36,13 @@ class JailbreakSettings(Document):
 		from frappe.types import DF
 
 		global_bulk_merge: DF.Check
-		global_unsubmit: DF.Check
 		item_convert_to_variant: DF.Check
-		version_restore: DF.Check
-		sales_invoice_calculate_outstanding: DF.Check
-		payment_request_mark_paid: DF.Check
-		payment_request_reinitiate_charge: DF.Check
-		payment_entry_set_clearance_date: DF.Check
 		journal_entry_manually_clear: DF.Check
 		journal_entry_remove_clearance: DF.Check
-		bank_transaction_change_date: DF.Check
+		payment_entry_set_clearance_date: DF.Check
+		version_restore: DF.Check
 	# end: auto-generated types
 	pass
-
-
-@frappe.whitelist()
-def check_capability(capability: capability_name) -> bool:
-	"""
-	Check if a jailbreak capability is enabled (for frontend use).
-
-	:param capability: The capability to check.
-	:type capability: capability_name
-	:return: True if the capability is enabled, False otherwise.
-	:rtype: bool
-	"""
-	try:
-		settings: JailbreakSettings = frappe.get_cached_doc("Jailbreak Settings")  # type: ignore
-	except frappe.DoesNotExistError:
-		return False
-
-	if capability not in capabilities:
-		return False
-
-	return bool(getattr(settings, capability, False))
 
 
 @frappe.whitelist()
@@ -133,3 +97,17 @@ def check_capability(capability: capability_name) -> bool:
 
 	# Check if the capability is enabled
 	return bool(getattr(settings, capability, False))
+
+
+def require_roles(*roles: str) -> None:
+	"""
+	Require the session user to hold at least one of `roles` before a
+	jailbreak capability is used. Administrator always passes.
+
+	A capability being enabled in Jailbreak Settings only says the tool is
+	available on this site; this says *who* may use it.
+
+	:param roles: The permitted roles.
+	:raises frappe.PermissionError: If the user holds none of `roles`.
+	"""
+	frappe.only_for(list(roles), message=True)

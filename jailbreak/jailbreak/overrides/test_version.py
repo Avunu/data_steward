@@ -4,6 +4,12 @@
 """S2 coverage for the `Version` controller override - the app's namesake
 "restore" feature.
 
+**Now disabled.** Because of the pinned bug described below, `Version.restore()`
+and `bulk_restore()` now throw "Version restore is temporarily disabled"
+before doing anything, and the desk buttons are no longer added. The tests
+below assert that; the original restore code is kept in place for the
+rewrite. The history below is kept for whoever does it.
+
 **Real bug found and pinned, not fixed** - needs a product decision, same
 category as the other tiers' pinned findings (`Design.reindex()`,
 `merge_legacy_designs()`, the artist reports' missing `docstatus` filter).
@@ -53,72 +59,37 @@ from jailbreak.tests import JailbreakIntegrationTestCase
 from jailbreak.tests.factories import make_note_with_version, set_capability
 
 
-class TestRestore(JailbreakIntegrationTestCase):
-	def test_disabled_capability_raises_permission_error(self):
-		version = make_note_with_version()
-		set_capability("version_restore", 0)
+class TestRestoreDisabled(JailbreakIntegrationTestCase):
+	"""Restore is disabled outright until it is rewritten (see the module
+	docstring for why the old behaviour was a silent no-op). These replace
+	the old S2 tests, which exercised code that can no longer be reached."""
 
-		with self.assertRaises(frappe.PermissionError):
-			Version("Version", version.name).restore(alert=False)
-
-	def test_nonexistent_document_throws(self):
-		version = make_note_with_version()
-		frappe.delete_doc("Note", version.docname, force=True, ignore_permissions=True)
-
-		with self.capability_enabled("version_restore"):
-			with self.assertRaises(frappe.ValidationError):
-				Version("Version", version.name).restore(alert=False)
-
-	def test_already_restored_raises_document_already_restored(self):
-		version = make_note_with_version()
-		version.db_set("restored", 1)
-
-		with self.capability_enabled("version_restore"):
-			with self.assertRaises(frappe.DocumentAlreadyRestored):
-				Version("Version", version.name).restore(alert=False)
-
-	def test_restore_marks_the_version_restored_and_returns_the_docname(self):
-		version = make_note_with_version()
-
-		with self.capability_enabled("version_restore"):
-			new_name = Version("Version", version.name).restore(alert=False)
-
-		self.assertEqual(new_name, version.docname)
-		self.assertEqual(frappe.db.get_value("Version", version.name, "restored"), 1)
-
-	def test_restore_does_not_actually_revert_the_changed_field(self):
-		"""Pinned bug - see the module docstring. A real user clicking
-		"Restore" on this Version gets told it worked and sees `content`
-		still at the *new* value, not the one being "restored"."""
+	def test_restore_throws_even_with_the_capability_enabled(self):
 		version = make_note_with_version(original="<p>original</p>", changed="<p>changed</p>")
 
 		with self.capability_enabled("version_restore"):
-			Version("Version", version.name).restore(alert=False)
+			with self.assertRaises(frappe.ValidationError) as ctx:
+				Version("Version", version.name).restore(alert=False)
 
-		note = frappe.get_doc("Note", version.docname)
-		self.assertEqual(note.content, "<p>changed</p>")  # not "<p>original</p>"
+		self.assertIn("Version restore is temporarily disabled", str(ctx.exception))
+		self.assertFalse(frappe.db.get_value("Version", version.name, "restored"))
+		self.assertEqual(frappe.db.get_value("Note", version.docname, "content"), "<p>changed</p>")
 
-
-class TestBulkRestore(JailbreakIntegrationTestCase):
-	def test_disabled_capability_raises_permission_error(self):
+	def test_restore_throws_with_the_capability_disabled(self):
 		version = make_note_with_version()
 		set_capability("version_restore", 0)
 
-		result = bulk_restore(frappe.as_json([version.name]))
+		with self.assertRaises(frappe.ValidationError):
+			Version("Version", version.name).restore(alert=False)
 
-		self.assertEqual(result["failed"], [version.name])
-		self.assertEqual(result["restored"], [])
 
-	def test_mixes_restored_invalid_and_failed(self):
-		restorable = make_note_with_version()
-		already_restored = make_note_with_version()
-		already_restored.db_set("restored", 1)
+class TestBulkRestoreDisabled(JailbreakIntegrationTestCase):
+	def test_bulk_restore_throws_instead_of_reporting_success(self):
+		version = make_note_with_version()
 
 		with self.capability_enabled("version_restore"):
-			result = bulk_restore(frappe.as_json([restorable.name, already_restored.name, "not-a-version"]))
+			with self.assertRaises(frappe.ValidationError) as ctx:
+				bulk_restore(frappe.as_json([version.name]))
 
-		self.assertEqual(len(result["restored"]), 1)
-		self.assertEqual(result["restored"][0]["version"], restorable.name)
-		self.assertEqual(result["restored"][0]["new_name"], restorable.docname)
-		self.assertEqual(result["invalid"], [already_restored.name])
-		self.assertEqual(result["failed"], ["not-a-version"])
+		self.assertIn("Version restore is temporarily disabled", str(ctx.exception))
+		self.assertFalse(frappe.db.get_value("Version", version.name, "restored"))

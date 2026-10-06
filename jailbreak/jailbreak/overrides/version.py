@@ -17,8 +17,12 @@ class Version(BaseVersion):
 	restored: DF.Check
 
 	@frappe.whitelist()
-	def restore(self, alert=True):
+	def restore(self, alert: bool = True) -> str:
 		"""Restore a version by creating a new document with the version data."""
+		# Disabled: Version.data is a diff, not a snapshot, so this never
+		# reverted anything while still reporting success. The code below is
+		# kept as the starting point for the rewrite.
+		frappe.throw(_("Version restore is temporarily disabled"))
 
 		# Check if the version restore capability is enabled
 		assert_capability("version_restore")
@@ -66,8 +70,11 @@ class Version(BaseVersion):
 
 
 @frappe.whitelist()
-def bulk_restore(docnames):
+def bulk_restore(docnames: str | list[str]) -> dict:
 	"""Bulk restore multiple versions."""
+	# Disabled along with Version.restore - see there.
+	frappe.throw(_("Version restore is temporarily disabled"))
+
 	docnames = frappe.parse_json(docnames)
 	message = _("Restoring Version")
 	restored, invalid, failed = [], [], []

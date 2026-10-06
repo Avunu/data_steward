@@ -10,11 +10,8 @@ app_include_js = "jailbreak.bundle.js"
 doctype_js = {
 	"Item": "public/js/item.js",
 	"Version": "public/js/version.js",
-	"Sales Invoice": "public/js/sales_invoice.js",
-	"Payment Request": "public/js/payment_request.js",
 	"Payment Entry": "public/js/payment_entry.js",
 	"Journal Entry": "public/js/journal_entry.js",
-	"Bank Transaction": "public/js/bank_transaction.js",
 }
 
 doctype_list_js = {
