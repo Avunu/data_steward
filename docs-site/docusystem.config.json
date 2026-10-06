@@ -1,0 +1,10 @@
+{
+  "$schema": "./node_modules/@avunu/docusystem/config.schema.json",
+  "name": "Jailbreak",
+  "tagline": "Power-user tools for Frappe and ERPNext admins, including bulk merge, item-to-variant conversion, and version restore, each gated behind a setting.",
+  "slug": "jailbreak",
+  "platform": "frappe",
+  "repo": "https://github.com/Avunu/jailbreak",
+  "domain": "data-steward.avunu.net",
+  "license": "MIT"
+}
