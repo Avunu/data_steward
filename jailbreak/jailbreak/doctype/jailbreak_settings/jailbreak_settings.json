@@ -13,31 +13,17 @@
   "versions_column",
   "version_restore",
   "accounting_features_section",
-  "sales_invoice_column",
-  "sales_invoice_calculate_outstanding",
-  "payment_request_column",
-  "payment_request_mark_paid",
-  "payment_request_reinitiate_charge",
   "payment_entry_column",
   "payment_entry_set_clearance_date",
   "journal_entry_column",
   "journal_entry_manually_clear",
-  "journal_entry_remove_clearance",
-  "bank_transaction_column", 
-  "bank_transaction_change_date",
-  "items_section",
-  "global_unsubmit"
+  "journal_entry_remove_clearance"
  ],
  "fields": [
   {
    "fieldname": "global_settings_section",
    "fieldtype": "Section Break",
    "label": "Global Settings"
-  },
-  {
-   "fieldname": "items_section",
-   "fieldtype": "Section Break",
-   "label": "Danger Zone"
   },
   {
    "fieldname": "doctype_features_section",
@@ -60,16 +46,6 @@
    "label": "Versions"
   },
   {
-   "fieldname": "sales_invoice_column",
-   "fieldtype": "Column Break",
-   "label": "Sales Invoice"
-  },
-  {
-   "fieldname": "payment_request_column",
-   "fieldtype": "Column Break",
-   "label": "Payment Request"
-  },
-  {
    "fieldname": "payment_entry_column",
    "fieldtype": "Column Break",
    "label": "Payment Entry"
@@ -78,11 +54,6 @@
    "fieldname": "journal_entry_column",
    "fieldtype": "Column Break",
    "label": "Journal Entry"
-  },
-  {
-   "fieldname": "bank_transaction_column",
-   "fieldtype": "Column Break",
-   "label": "Bank Transaction"
   },
   {
    "default": "0",
@@ -104,30 +75,6 @@
   },
   {
    "default": "0",
-   "fieldname": "global_unsubmit",
-   "fieldtype": "Check",
-   "label": "Allow Unsubmit on Documents"
-  },
-  {
-   "default": "0",
-   "fieldname": "sales_invoice_calculate_outstanding",
-   "fieldtype": "Check",
-   "label": "Calculate Outstanding Amount"
-  },
-  {
-   "default": "0",
-   "fieldname": "payment_request_mark_paid",
-   "fieldtype": "Check",
-   "label": "Mark as Paid"
-  },
-  {
-   "default": "0",
-   "fieldname": "payment_request_reinitiate_charge",
-   "fieldtype": "Check",
-   "label": "Re-Initiate Charge"
-  },
-  {
-   "default": "0",
    "fieldname": "payment_entry_set_clearance_date",
    "fieldtype": "Check",
    "label": "Set Clearance Date"
@@ -143,19 +90,13 @@
    "fieldname": "journal_entry_remove_clearance",
    "fieldtype": "Check",
    "label": "Remove Clearance"
-  },
-  {
-   "default": "0",
-   "fieldname": "bank_transaction_change_date",
-   "fieldtype": "Check",
-   "label": "Change Date"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-07-31 13:48:26.892107",
+ "modified": "2026-10-06 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Jailbreak",
  "name": "Jailbreak Settings",

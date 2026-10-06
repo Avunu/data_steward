@@ -17,7 +17,7 @@ from __future__ import annotations
 from typing import Any, cast
 
 import frappe
-from frappe.utils import add_days, nowdate
+from frappe.utils import nowdate
 
 PREFIX = "_JB Test"
 
@@ -60,14 +60,6 @@ def set_capability(capability: str, value: int) -> None:
 	settings.save(ignore_permissions=True)
 
 
-def make_customer(name: str = f"{PREFIX} Customer") -> Any:
-	if frappe.db.exists("Customer", name):
-		return frappe.get_doc("Customer", name)
-	return _insert(
-		frappe.get_doc({"doctype": "Customer", "customer_name": name, "customer_type": "Individual"})
-	)
-
-
 def make_item(item_code: str = f"{PREFIX}-Item", *, is_sales_item: int = 1, **fields: Any) -> Any:
 	"""An Item. Idempotent on `item_code`."""
 	if frappe.db.exists("Item", item_code):
@@ -106,44 +98,6 @@ def make_item_template(
 				"is_stock_item": 1,
 				"has_variants": 1,
 				"attributes": [{"attribute": attribute}],
-				**fields,
-			}
-		)
-	)
-
-
-def make_sales_order(
-	*, customer: str | None = None, item_code: str | None = None, submit: bool = True
-) -> Any:
-	"""A minimal, real Sales Order - `hooks.payment_request` needs a real
-	reference document to attach a Payment Request to."""
-	customer = customer or make_customer().name
-	item_code = item_code or make_item().name
-	warehouse = cast(str, frappe.db.get_value("Warehouse", {"company": company(), "is_group": 0}, "name"))
-	so = frappe.get_doc(
-		{
-			"doctype": "Sales Order",
-			"customer": customer,
-			"company": company(),
-			"delivery_date": add_days(nowdate(), 7),
-			"items": [{"item_code": item_code, "qty": 1, "rate": 100, "warehouse": warehouse}],
-		}
-	)
-	return _insert(so, submit=submit)
-
-
-def make_payment_request(*, reference: Any | None = None, **fields: Any) -> Any:
-	reference = reference or make_sales_order()
-	return _insert(
-		frappe.get_doc(
-			{
-				"doctype": "Payment Request",
-				"payment_request_type": fields.pop("payment_request_type", "Inward"),
-				"reference_doctype": reference.doctype,
-				"reference_name": reference.name,
-				"party_type": "Customer",
-				"party": reference.customer,
-				"grand_total": reference.grand_total,
 				**fields,
 			}
 		)
@@ -296,3 +250,27 @@ def make_payment_entry(*, reference_no: str = "_JB-PROBE-1", **fields: Any) -> A
 			}
 		)
 	)
+
+
+def make_user(email: str, *roles: str) -> Any:
+	"""A System User holding exactly `roles` (plus the automatic ones), for
+	the role checks in front of every whitelisted endpoint. Idempotent on
+	`email`; an existing user has its roles reset to `roles`."""
+	if frappe.db.exists("User", email):
+		user = frappe.get_doc("User", email)
+	else:
+		user = _insert(
+			frappe.get_doc(
+				{
+					"doctype": "User",
+					"email": email,
+					"first_name": email.split("@")[0],
+					"user_type": "System User",
+					"send_welcome_email": 0,
+				}
+			)
+		)
+	user.flags.ignore_permissions = True
+	user.set("roles", [])
+	user.add_roles(*roles)
+	return user

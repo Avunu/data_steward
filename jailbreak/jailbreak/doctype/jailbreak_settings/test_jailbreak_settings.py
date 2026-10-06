@@ -14,9 +14,10 @@ import frappe
 from jailbreak.jailbreak.doctype.jailbreak_settings.jailbreak_settings import (
 	assert_capability,
 	check_capability,
+	require_roles,
 )
 from jailbreak.tests import JailbreakIntegrationTestCase
-from jailbreak.tests.factories import set_capability
+from jailbreak.tests.factories import make_user, set_capability
 
 
 class TestCheckCapability(JailbreakIntegrationTestCase):
@@ -34,13 +35,13 @@ class TestCheckCapability(JailbreakIntegrationTestCase):
 
 class TestAssertCapability(JailbreakIntegrationTestCase):
 	def test_disabled_capability_raises_permission_error(self):
-		set_capability("bank_transaction_change_date", 0)
+		set_capability("journal_entry_remove_clearance", 0)
 		with self.assertRaises(frappe.PermissionError):
-			assert_capability("bank_transaction_change_date")
+			assert_capability("journal_entry_remove_clearance")
 
 	def test_enabled_capability_does_not_raise(self):
-		with self.capability_enabled("bank_transaction_change_date"):
-			self.assertIsNone(assert_capability("bank_transaction_change_date"))
+		with self.capability_enabled("journal_entry_remove_clearance"):
+			self.assertIsNone(assert_capability("journal_entry_remove_clearance"))
 
 	def test_unknown_capability_raises_validation_error(self):
 		with self.assertRaises(frappe.ValidationError):
@@ -56,12 +57,29 @@ class TestTopLevelWrappers(JailbreakIntegrationTestCase):
 	def test_wrapper_check_capability_delegates(self):
 		import jailbreak
 
-		with self.capability_enabled("bank_transaction_change_date"):
-			self.assertTrue(jailbreak.check_capability("bank_transaction_change_date"))
+		with self.capability_enabled("journal_entry_remove_clearance"):
+			self.assertTrue(jailbreak.check_capability("journal_entry_remove_clearance"))
 
 	def test_wrapper_assert_capability_delegates(self):
 		import jailbreak
 
-		set_capability("bank_transaction_change_date", 0)
+		set_capability("journal_entry_remove_clearance", 0)
 		with self.assertRaises(frappe.PermissionError):
-			jailbreak.assert_capability("bank_transaction_change_date")
+			jailbreak.assert_capability("journal_entry_remove_clearance")
+
+
+class TestRequireRoles(JailbreakIntegrationTestCase):
+	def test_user_without_any_listed_role_raises_permission_error(self):
+		user = make_user("jb_test_roles_none@example.com")
+		with self.set_user(user.name):
+			with self.assertRaises(frappe.PermissionError):
+				require_roles("Accounts Manager", "System Manager")
+
+	def test_any_one_listed_role_is_enough(self):
+		user = make_user("jb_test_roles_sysman@example.com", "System Manager")
+		with self.set_user(user.name):
+			self.assertIsNone(require_roles("Accounts Manager", "System Manager"))
+
+	def test_administrator_always_passes(self):
+		with self.set_user("Administrator"):
+			self.assertIsNone(require_roles("Accounts Manager"))

@@ -4,15 +4,19 @@ import frappe
 from frappe import _
 
 from jailbreak import assert_capability
+from jailbreak.jailbreak.doctype.jailbreak_settings.jailbreak_settings import require_roles
 
 if TYPE_CHECKING:
 	from erpnext.stock.doctype.item.item import Item
 
 
 @frappe.whitelist()
-def convert_to_variant(item: str, template: str, attribute_values: dict) -> bool:
+def convert_to_variant(item: str, template: str, attribute_values: dict | str) -> bool:
 	# Check if the item convert to variant capability is enabled
 	assert_capability("item_convert_to_variant")
+	require_roles("Item Manager", "System Manager")
+	# The variant_of write below bypasses Item permissions, so check them first.
+	frappe.has_permission("Item", "write", item, throw=True)
 
 	try:
 		# Parse attribute_values if it's a string
@@ -52,6 +56,7 @@ def convert_to_variant(item: str, template: str, attribute_values: dict) -> bool
 			item_doc.sales_uom = old_stock_uom
 
 		item_doc.save()
+		item_doc.add_comment("Edit", _("Converted to a variant of {0}").format(template))
 		frappe.db.commit()
 
 		return True
