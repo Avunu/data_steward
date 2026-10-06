@@ -3,7 +3,7 @@ app_title = "Jailbreak"
 app_publisher = "Avunu LLC"
 app_description = "Add destructive superpowers to any Frappe site."
 app_email = "mail@avu.nu"
-app_license = "mit"
+app_license = "MIT"
 
 app_include_js = "jailbreak.bundle.js"
 

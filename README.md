@@ -4,6 +4,8 @@
 
 Add destructive superpowers to any Frappe site.
 
+Jailbreak is a Frappe app of opt-in administrative power tools for the cases where the standard guardrails get in the way: global bulk merge of records in any DocType, converting an existing Item into a variant of a template Item, restoring documents from their version history, and a handful of accounting corrections (for example setting a clearance date or marking a payment request as paid). Installing the app does not switch any of these on. Each tool is disabled until a System Manager enables it, one capability at a time, in Jailbreak Settings, and the server-side code re-checks the setting on every call, so hiding a button in the browser is not the only protection. The one exception is the full-width layout, which is a cosmetic default for the desk UI (it is skipped if you have already chosen a container width) and does not touch any data.
+
 ## Features
 
 Jailbreak is a collection of various hacks, mods, and anti-features you probably don't want enabled on your Frappe sites... but if you do, they can be individually enabled in all their perilous grandeur:
@@ -71,4 +73,4 @@ Pre-commit is configured to use the following tools for checking and formatting 
 
 ### License
 
-mit
+MIT, Copyright (c) 2026 Avunu LLC. See [license.txt](license.txt).
