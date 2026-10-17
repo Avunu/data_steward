@@ -55,7 +55,6 @@
 		},
 		{
 			"files": [
-				"jailbreak/jailbreak/doctype/jailbreak_settings/jailbreak_settings.js",
 				"jailbreak/public/js/full_width.js",
 				"jailbreak/public/js/item.js",
 				"jailbreak/public/js/jailbreak.js",

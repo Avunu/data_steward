@@ -108,10 +108,12 @@ class TestConvertToVariantPermissions(JailbreakIntegrationTestCase):
 		item = make_item("_JB Test Convert Perm Denied")
 		template = make_item_template()
 
-		with self.capability_enabled("item_convert_to_variant"):
-			with self.set_user(user.name):
-				with self.assertRaises(frappe.PermissionError):
-					convert_to_variant(item.name, template.name, {"Colour": "Red"})
+		with (
+			self.capability_enabled("item_convert_to_variant"),
+			self.set_user(user.name),
+			self.assertRaises(frappe.PermissionError),
+		):
+			convert_to_variant(item.name, template.name, {"Colour": "Red"})
 
 		self.assertFalse(frappe.db.get_value("Item", item.name, "variant_of"))
 		self.assertFalse(_variant_comment_exists(item.name))
@@ -122,10 +124,12 @@ class TestConvertToVariantPermissions(JailbreakIntegrationTestCase):
 		item = make_item("_JB Test Convert Perm No Write")
 		template = make_item_template()
 
-		with self.capability_enabled("item_convert_to_variant"):
-			with self.set_user(user.name):
-				with self.assertRaises(frappe.PermissionError):
-					convert_to_variant(item.name, template.name, {"Colour": "Red"})
+		with (
+			self.capability_enabled("item_convert_to_variant"),
+			self.set_user(user.name),
+			self.assertRaises(frappe.PermissionError),
+		):
+			convert_to_variant(item.name, template.name, {"Colour": "Red"})
 
 		self.assertFalse(frappe.db.get_value("Item", item.name, "variant_of"))
 
@@ -134,9 +138,8 @@ class TestConvertToVariantPermissions(JailbreakIntegrationTestCase):
 		item = make_item("_JB Test Convert Perm Allowed")
 		template = make_item_template()
 
-		with self.capability_enabled("item_convert_to_variant"):
-			with self.set_user(user.name):
-				self.assertTrue(convert_to_variant(item.name, template.name, {"Colour": "Red"}))
+		with self.capability_enabled("item_convert_to_variant"), self.set_user(user.name):
+			self.assertTrue(convert_to_variant(item.name, template.name, {"Colour": "Red"}))
 
 		self.assertEqual(frappe.db.get_value("Item", item.name, "variant_of"), template.name)
 		self.assertTrue(_variant_comment_exists(item.name))
@@ -146,9 +149,8 @@ class TestConvertToVariantPermissions(JailbreakIntegrationTestCase):
 		item = make_item("_JB Test Convert Perm SysMan")
 		template = make_item_template()
 
-		with self.capability_enabled("item_convert_to_variant"):
-			with self.set_user(user.name):
-				self.assertTrue(convert_to_variant(item.name, template.name, {"Colour": "Red"}))
+		with self.capability_enabled("item_convert_to_variant"), self.set_user(user.name):
+			self.assertTrue(convert_to_variant(item.name, template.name, {"Colour": "Red"}))
 
 		self.assertEqual(frappe.db.get_value("Item", item.name, "variant_of"), template.name)
 		self.assertTrue(_variant_comment_exists(item.name))

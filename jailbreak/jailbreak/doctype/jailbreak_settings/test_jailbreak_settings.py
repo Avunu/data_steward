@@ -71,9 +71,8 @@ class TestTopLevelWrappers(JailbreakIntegrationTestCase):
 class TestRequireRoles(JailbreakIntegrationTestCase):
 	def test_user_without_any_listed_role_raises_permission_error(self):
 		user = make_user("jb_test_roles_none@example.com")
-		with self.set_user(user.name):
-			with self.assertRaises(frappe.PermissionError):
-				require_roles("Accounts Manager", "System Manager")
+		with self.set_user(user.name), self.assertRaises(frappe.PermissionError):
+			require_roles("Accounts Manager", "System Manager")
 
 	def test_any_one_listed_role_is_enough(self):
 		user = make_user("jb_test_roles_sysman@example.com", "System Manager")

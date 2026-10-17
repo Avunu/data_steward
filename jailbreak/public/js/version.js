@@ -1,3 +1,6 @@
+// Copyright (c) 2026, Avunu LLC and contributors
+// For license information, please see license.txt
+
 /* global jailbreak */
 
 frappe.ui.form.on("Version", {
@@ -20,7 +23,7 @@ frappe.ui.form.on("Version", {
 						frm.call({
 							method: "restore",
 							doc: frm.doc,
-							callback: function (r) {
+							callback: function () {
 								frm.reload_doc();
 							},
 						});

@@ -1,3 +1,6 @@
+// Copyright (c) 2026, Avunu LLC and contributors
+// For license information, please see license.txt
+
 /* global jailbreak */
 
 frappe.listview_settings["Version"] = {
@@ -34,32 +37,16 @@ frappe.listview_settings["Version"] = {
 									};
 
 									let message = (title, items) => {
-										return items.length > 0
-											? title + body(items) + "</ul>"
-											: "";
+										return items.length > 0 ? title + body(items) + "</ul>" : "";
 									};
 
 									const { restored, invalid, failed } = r.message;
-									const restored_summary = message(
-										__("Versions restored successfully"),
-										restored
-									);
-									const invalid_summary = message(
-										__("Versions that were already restored"),
-										invalid
-									);
-									const failed_summary = message(
-										__("Versions that failed to restore"),
-										failed
-									);
-									const summary =
-										restored_summary + invalid_summary + failed_summary;
+									const restored_summary = message(__("Versions restored successfully"), restored);
+									const invalid_summary = message(__("Versions that were already restored"), invalid);
+									const failed_summary = message(__("Versions that failed to restore"), failed);
+									const summary = restored_summary + invalid_summary + failed_summary;
 
-									frappe.msgprint(
-										summary,
-										__("Version Restoration Summary"),
-										true
-									);
+									frappe.msgprint(summary, __("Version Restoration Summary"), true);
 
 									if (restored.length > 0) {
 										doclist.refresh();

@@ -42,7 +42,6 @@ class JailbreakSettings(Document):
 		payment_entry_set_clearance_date: DF.Check
 		version_restore: DF.Check
 	# end: auto-generated types
-	pass
 
 
 @frappe.whitelist()

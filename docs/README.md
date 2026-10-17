@@ -11,23 +11,27 @@ Jailbreak is a Frappe app of opt-in administrative power tools for the cases whe
 Jailbreak is a collection of various hacks, mods, and anti-features you probably don't want enabled on your Frappe sites... but if you do, they can be individually enabled in all their perilous grandeur:
 
 ### 🔀 Global Bulk Merge
+
 - **Description**: Merge multiple records across any DocType
 - **Location**: Available as "Merge Selected" action in all list views
 - **Usage**: Select 2+ records in any list view and use the "Merge Selected" action
 
 ### 📦 Item Convert to Variant
+
 - **Description**: Convert existing Items into variants of template Items
 - **Location**: Item form → Actions → "Convert to Variant"
 - **Usage**: Select a template item and specify attribute values to convert the current item
 
 ### 🔄 Version Restore
+
 - **Description**: Restore documents from their version history
 - **Location**: Version list view and individual Version forms
-- **Usage**: 
+- **Usage**:
   - **List View**: Select versions and use "Restore" bulk action
   - **Form View**: Click "Restore" button on individual versions
 
 ### 🖥️ Full Width Interface
+
 - **Description**: Automatically enables full-width container layout
 - **Usage**: Automatically applied when the app is installed (no capability gate)
 

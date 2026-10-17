@@ -1,40 +1,47 @@
+// Copyright (c) 2026, Avunu LLC and contributors
+// For license information, please see license.txt
+
 /* global jailbreak */
 
 // add a button "Set Clearance Date" to the "Payment Entry" form
 // the button will set the corresponding "clearance_date" field
-frappe.ui.form.on('Payment Entry', {
+frappe.ui.form.on("Payment Entry", {
 	refresh: function (frm) {
 		// Check if payment entry set clearance date capability is enabled
 		jailbreak.check_capability("payment_entry_set_clearance_date").then((enabled) => {
 			if (enabled) {
-				frm.add_custom_button(__('Set Clearance Date'), function () {
+				frm.add_custom_button(__("Set Clearance Date"), function () {
 					// open a dialog to change the date
-					frappe.prompt([
-						{
-							fieldname: 'clearance_date',
-							fieldtype: 'Date',
-							label: __('Clearance Date'),
-							reqd: 1,
-							default: frm.doc.clearance_date
-						}
-					], function (values) {
-						// change the date
-						frappe.call({
-							method: 'jailbreak.jailbreak.hooks.payment_entry.set_clearance_date',
-							args: {
-								payment_entry_name: frm.doc.name,
-								clearance_date: values.clearance_date
+					frappe.prompt(
+						[
+							{
+								fieldname: "clearance_date",
+								fieldtype: "Date",
+								label: __("Clearance Date"),
+								reqd: 1,
+								default: frm.doc.clearance_date,
 							},
-							callback: function (response) {
-								if (response.message) {
-									frappe.msgprint(response.message);
-								}
-							}
-						});
-					}
-					, __('Set Clearance Date'), __('Set'));
+						],
+						function (values) {
+							// change the date
+							frappe.call({
+								method: "jailbreak.jailbreak.hooks.payment_entry.set_clearance_date",
+								args: {
+									payment_entry_name: frm.doc.name,
+									clearance_date: values.clearance_date,
+								},
+								callback: function (response) {
+									if (response.message) {
+										frappe.msgprint(response.message);
+									}
+								},
+							});
+						},
+						__("Set Clearance Date"),
+						__("Set"),
+					);
 				});
 			}
 		});
-	}
+	},
 });
