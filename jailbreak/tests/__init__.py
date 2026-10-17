@@ -19,9 +19,8 @@ gives you::
                 ...
 
 Commits are suppressed the same way our other apps' live-database test
-harnesses do it - several of the functions
-under test call `frappe.db.commit()` themselves, and `bulk_rename` (behind
-`bulk_merge`) commits per row.
+harnesses do it: the app's own endpoints no longer commit, but
+`bulk_rename` (behind `bulk_merge`) commits per row.
 """
 
 from __future__ import annotations
@@ -33,7 +32,7 @@ import frappe
 from frappe.tests import IntegrationTestCase
 
 if TYPE_CHECKING:
-	from collections.abc import Iterator
+	from collections.abc import Generator
 
 __all__ = ["JailbreakIntegrationTestCase"]
 
@@ -62,7 +61,7 @@ class JailbreakIntegrationTestCase(IntegrationTestCase):
 		super().tearDownClass()
 
 	@contextmanager
-	def capability_enabled(self, capability: str) -> Iterator[None]:
+	def capability_enabled(self, capability: str) -> Generator[None]:
 		"""Turn one Jailbreak Settings capability on for the block, off after.
 
 		`assert_capability`/`check_capability` read `Jailbreak Settings`

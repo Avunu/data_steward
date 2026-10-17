@@ -1,7 +1,7 @@
 # Copyright (c) 2025, Avunu LLC and contributors
 # For license information, please see license.txt
 
-from typing import Literal
+from typing import Literal, cast
 
 import frappe
 from frappe import _
@@ -55,9 +55,8 @@ def assert_capability(capability: capability_name) -> None:
 	:raises frappe.DoesNotExistError: If the Jailbreak Settings document does not exist.
 	:raises frappe.ValidationError: If the capability is not recognized.
 	"""
-	settings: JailbreakSettings
 	try:
-		settings = frappe.get_cached_doc("Jailbreak Settings")  # type: ignore
+		settings = cast(JailbreakSettings, frappe.get_cached_doc("Jailbreak Settings"))
 	except frappe.DoesNotExistError:
 		frappe.throw(
 			_("Jailbreak Settings document does not exist."),
@@ -87,7 +86,7 @@ def check_capability(capability: capability_name) -> bool:
 	:rtype: bool
 	"""
 	try:
-		settings: JailbreakSettings = frappe.get_cached_doc("Jailbreak Settings")  # type: ignore
+		settings = cast(JailbreakSettings, frappe.get_cached_doc("Jailbreak Settings"))
 	except frappe.DoesNotExistError:
 		return False
 

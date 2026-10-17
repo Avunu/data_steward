@@ -19,6 +19,5 @@ def bulk_merge(doctype: str, rows: str) -> list[str]:
 
 	from frappe.model.rename_doc import bulk_rename
 
-	rows = json.loads(rows)
-
-	return bulk_rename(doctype, rows)
+	# bulk_rename returns None only when run from the console
+	return bulk_rename(doctype, json.loads(rows)) or []
