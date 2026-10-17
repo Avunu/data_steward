@@ -67,6 +67,20 @@ class TestTopLevelWrappers(JailbreakIntegrationTestCase):
 		with self.assertRaises(frappe.PermissionError):
 			api.assert_capability("journal_entry_remove_clearance")
 
+	def test_pre_move_dotted_paths_still_resolve(self):
+		"""`override_whitelisted_methods` keeps `jailbreak.check_capability` and
+		`jailbreak.assert_capability` working after the move to `jailbreak.api`."""
+		from jailbreak import api
+
+		overrides = frappe.get_hooks("override_whitelisted_methods")
+		for old_path, fn in (
+			("jailbreak.check_capability", api.check_capability),
+			("jailbreak.assert_capability", api.assert_capability),
+		):
+			method = frappe.get_attr(overrides[old_path][-1])
+			self.assertIs(method, fn)
+			frappe.is_whitelisted(method)
+
 
 class TestRequireRoles(JailbreakIntegrationTestCase):
 	def test_user_without_any_listed_role_raises_permission_error(self):

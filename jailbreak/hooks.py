@@ -24,3 +24,9 @@ doctype_list_js = {
 export_python_type_annotations = True
 
 override_doctype_class = {"Version": "jailbreak.jailbreak.overrides.version.Version"}
+
+# Keep the pre-move dotted paths working for REST callers and cached desk bundles.
+override_whitelisted_methods = {
+	"jailbreak.check_capability": "jailbreak.api.check_capability",
+	"jailbreak.assert_capability": "jailbreak.api.assert_capability",
+}
