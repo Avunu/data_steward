@@ -1,14 +1,15 @@
 # Copyright (c) 2026, Avunu LLC and contributors
 # For license information, please see license.txt
 
-"""S2 coverage for the `Version` controller override - the app's namesake
+"""S2 coverage for the `Version` controller extension - the app's namesake
 "restore" feature.
 
 **Now disabled.** Because of the pinned bug described below, `Version.restore()`
 and `bulk_restore()` now throw "Version restore is temporarily disabled"
 before doing anything, and the desk buttons are no longer added. The tests
-below assert that; the original restore code is kept in place for the
-rewrite. The history below is kept for whoever does it.
+below assert that. The unreachable original restore code is gone from the
+module (it is in git history); the history below is kept for whoever does
+the rewrite.
 
 **Real bug found and pinned, not fixed** - needs a product decision, same
 category as the other tiers' pinned findings (`Design.reindex()`,
