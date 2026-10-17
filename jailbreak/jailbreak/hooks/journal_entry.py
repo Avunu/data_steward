@@ -1,7 +1,7 @@
 import frappe
 from frappe import _
 
-from jailbreak import assert_capability
+from jailbreak.api import assert_capability
 from jailbreak.jailbreak.doctype.jailbreak_settings.jailbreak_settings import require_roles
 
 
