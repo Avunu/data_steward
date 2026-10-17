@@ -110,6 +110,23 @@
         "type": "github"
       }
     },
+    "erpnext": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1792084156,
+        "narHash": "sha256-2dARW04y0On+cjpDYQJqWmeLBGrDdllU+2bL7eSjj/I=",
+        "owner": "frappe",
+        "repo": "erpnext",
+        "rev": "5af6561f5aa48104559692fb4fd82f2580e8d338",
+        "type": "github"
+      },
+      "original": {
+        "owner": "frappe",
+        "ref": "version-16",
+        "repo": "erpnext",
+        "type": "github"
+      }
+    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -645,6 +662,7 @@
     },
     "root": {
       "inputs": {
+        "erpnext": "erpnext",
         "frappe": "frappe",
         "frappe-nix": "frappe-nix",
         "nixpkgs": [

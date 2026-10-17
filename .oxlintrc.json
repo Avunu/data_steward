@@ -72,7 +72,8 @@
 				"locals": "readonly",
 				"$": "readonly",
 				"jQuery": "readonly",
-				"moment": "readonly"
+				"moment": "readonly",
+				"erpnext": "readonly"
 			}
 		}
 	]

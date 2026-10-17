@@ -8,6 +8,8 @@ app_description = "Add destructive superpowers to any Frappe site."
 app_email = "mail@avu.nu"
 app_license = "MIT"
 
+required_apps = ["erpnext"]
+
 app_include_js = "jailbreak.bundle.js"
 
 doctype_js = {
