@@ -65,4 +65,9 @@ fail_under = 0
 exclude = [".venv/", "node_modules/", ".frappe-nix/", ".dev-dist/"]
 
 [tool.test_utils.static-analysis]
-whitelist = ["frappe.*"]
+whitelist = [
+	"frappe.*",
+	# Old dotted paths kept as keys of override_whitelisted_methods in hooks.py.
+	"jailbreak.assert_capability",
+	"jailbreak.check_capability",
+]
