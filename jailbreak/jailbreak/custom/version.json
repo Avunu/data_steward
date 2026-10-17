@@ -5,7 +5,6 @@
             "fieldname": "restored",
             "fieldtype": "Check",
             "insert_after": "ref_doctype",
-            "is_system_generated": 1,
             "label": "Restored",
             "module": "Jailbreak",
             "read_only": 1
