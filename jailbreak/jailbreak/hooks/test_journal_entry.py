@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import frappe
+from frappe.tests.classes.context_managers import set_user
 
 from jailbreak.jailbreak.hooks.journal_entry import (
 	manually_clear_journal_entry,
@@ -117,7 +118,7 @@ class TestJournalEntryClearancePermissions(JailbreakIntegrationTestCase):
 
 		with (
 			self.capability_enabled("journal_entry_manually_clear"),
-			self.set_user(user.name),
+			set_user(user.name),
 			self.assertRaises(frappe.PermissionError),
 		):
 			manually_clear_journal_entry(je.name)
@@ -132,7 +133,7 @@ class TestJournalEntryClearancePermissions(JailbreakIntegrationTestCase):
 
 		with (
 			self.capability_enabled("journal_entry_remove_clearance"),
-			self.set_user(user.name),
+			set_user(user.name),
 			self.assertRaises(frappe.PermissionError),
 		):
 			remove_clearance_date_journal_entry(je.name)
@@ -147,7 +148,7 @@ class TestJournalEntryClearancePermissions(JailbreakIntegrationTestCase):
 
 		with (
 			self.capability_enabled("journal_entry_manually_clear"),
-			self.set_user(user.name),
+			set_user(user.name),
 			self.assertRaises(frappe.PermissionError),
 		):
 			manually_clear_journal_entry(je.name)
@@ -156,7 +157,7 @@ class TestJournalEntryClearancePermissions(JailbreakIntegrationTestCase):
 		user = make_user("jb_test_je_sysman@example.com", "System Manager", "Accounts User")
 		je = make_cleared_journal_entry(clearance_date="2020-02-02")
 
-		with self.capability_enabled("journal_entry_manually_clear"), self.set_user(user.name):
+		with self.capability_enabled("journal_entry_manually_clear"), set_user(user.name):
 			manually_clear_journal_entry(je.name)
 
 		self.assertEqual(str(frappe.db.get_value("Journal Entry", je.name, "clearance_date")), "2020-02-02")
@@ -167,7 +168,7 @@ class TestJournalEntryClearancePermissions(JailbreakIntegrationTestCase):
 		je = make_journal_entry()
 		frappe.db.set_value("Journal Entry", je.name, "clearance_date", "2020-02-02")
 
-		with self.capability_enabled("journal_entry_remove_clearance"), self.set_user(user.name):
+		with self.capability_enabled("journal_entry_remove_clearance"), set_user(user.name):
 			remove_clearance_date_journal_entry(je.name)
 
 		self.assertIsNone(frappe.db.get_value("Journal Entry", je.name, "clearance_date"))

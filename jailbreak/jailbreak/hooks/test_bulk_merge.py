@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 
 import frappe
+from frappe.tests.classes.context_managers import set_user
 
 from jailbreak.jailbreak.hooks import bulk_merge
 from jailbreak.tests import JailbreakIntegrationTestCase
@@ -43,7 +44,7 @@ class TestBulkMerge(JailbreakIntegrationTestCase):
 
 		with (
 			self.capability_enabled("global_bulk_merge"),
-			self.set_user(user.name),
+			set_user(user.name),
 			self.assertRaises(frappe.PermissionError),
 		):
 			bulk_merge("Item", json.dumps([[item.name, "_JB Test Bulk Perm Denied Renamed"]]))
@@ -55,7 +56,7 @@ class TestBulkMerge(JailbreakIntegrationTestCase):
 		user = make_user("jb_test_merge_sysman@example.com", "System Manager", "Item Manager")
 		item = make_item("_JB Test Bulk Perm Old")
 
-		with self.capability_enabled("global_bulk_merge"), self.set_user(user.name):
+		with self.capability_enabled("global_bulk_merge"), set_user(user.name):
 			result = bulk_merge("Item", json.dumps([[item.name, "_JB Test Bulk Perm New"]]))
 
 		self.assertEqual(result, [f"Successful: {item.name} to _JB Test Bulk Perm New"])

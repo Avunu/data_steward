@@ -17,11 +17,18 @@ against a real document read back from the database."""
 
 from __future__ import annotations
 
+import json
+from typing import TYPE_CHECKING, cast
+
 import frappe
+from frappe.tests.classes.context_managers import set_user
 
 from jailbreak.jailbreak.hooks.item import convert_to_variant
 from jailbreak.tests import JailbreakIntegrationTestCase
 from jailbreak.tests.factories import make_item, make_item_template, make_user, set_capability
+
+if TYPE_CHECKING:
+	from erpnext.stock.doctype.item.item import Item
 
 
 class TestConvertToVariant(JailbreakIntegrationTestCase):
@@ -40,12 +47,26 @@ class TestConvertToVariant(JailbreakIntegrationTestCase):
 		with self.capability_enabled("item_convert_to_variant"):
 			self.assertTrue(convert_to_variant(item.name, template.name, {"Colour": "Red"}))
 
-		converted = frappe.get_doc("Item", item.name)
+		converted: Item = cast("Item", frappe.get_doc("Item", item.name))
 		self.assertEqual(converted.variant_of, template.name)
 		# UOM is swapped from the template, and the item's original stock_uom
 		# becomes its sales_uom - see convert_to_variant's UOM-conversion step.
 		self.assertEqual(converted.stock_uom, template.stock_uom)
 		self.assertEqual(converted.sales_uom, "Box")
+		self.assertEqual(
+			[(a.attribute, a.attribute_value) for a in converted.attributes], [("Colour", "Red")]
+		)
+
+	def test_attribute_values_as_a_json_string(self):
+		"""REST callers send `attribute_values` as a JSON string, not a dict."""
+		item = make_item("_JB Test Convert JSON")
+		template = make_item_template()
+
+		with self.capability_enabled("item_convert_to_variant"):
+			self.assertTrue(convert_to_variant(item.name, template.name, json.dumps({"Colour": "Red"})))
+
+		converted: Item = cast("Item", frappe.get_doc("Item", item.name))
+		self.assertEqual(converted.variant_of, template.name)
 		self.assertEqual(
 			[(a.attribute, a.attribute_value) for a in converted.attributes], [("Colour", "Red")]
 		)
@@ -57,11 +78,12 @@ class TestConvertToVariant(JailbreakIntegrationTestCase):
 		up with a non-empty attribute table (`Item.validate()` requires one
 		for a variant), and only the provided one shows up."""
 		item = make_item("_JB Test Convert Partial")
+		template_code = "_JB Test Two-Attribute Template"
 		template = frappe.get_doc(
 			{
 				"doctype": "Item",
-				"item_code": "_JB Test Two-Attribute Template",
-				"item_name": "_JB Test Two-Attribute Template",
+				"item_code": template_code,
+				"item_name": template_code,
 				"item_group": "All Item Groups",
 				"stock_uom": "Nos",
 				"is_stock_item": 1,
@@ -69,15 +91,15 @@ class TestConvertToVariant(JailbreakIntegrationTestCase):
 				"attributes": [{"attribute": "Colour"}, {"attribute": "Size"}],
 			}
 		)
-		if not frappe.db.exists("Item", template.item_code):
+		if not frappe.db.exists("Item", template_code):
 			template.insert(ignore_permissions=True)
 		else:
-			template = frappe.get_doc("Item", template.item_code)
+			template = frappe.get_doc("Item", template_code)
 
 		with self.capability_enabled("item_convert_to_variant"):
 			self.assertTrue(convert_to_variant(item.name, template.name, {"Colour": "Red"}))
 
-		converted = frappe.get_doc("Item", item.name)
+		converted: Item = cast("Item", frappe.get_doc("Item", item.name))
 		self.assertEqual(converted.variant_of, template.name)
 		self.assertEqual(
 			[(a.attribute, a.attribute_value) for a in converted.attributes], [("Colour", "Red")]
@@ -110,7 +132,7 @@ class TestConvertToVariantPermissions(JailbreakIntegrationTestCase):
 
 		with (
 			self.capability_enabled("item_convert_to_variant"),
-			self.set_user(user.name),
+			set_user(user.name),
 			self.assertRaises(frappe.PermissionError),
 		):
 			convert_to_variant(item.name, template.name, {"Colour": "Red"})
@@ -126,7 +148,7 @@ class TestConvertToVariantPermissions(JailbreakIntegrationTestCase):
 
 		with (
 			self.capability_enabled("item_convert_to_variant"),
-			self.set_user(user.name),
+			set_user(user.name),
 			self.assertRaises(frappe.PermissionError),
 		):
 			convert_to_variant(item.name, template.name, {"Colour": "Red"})
@@ -138,7 +160,7 @@ class TestConvertToVariantPermissions(JailbreakIntegrationTestCase):
 		item = make_item("_JB Test Convert Perm Allowed")
 		template = make_item_template()
 
-		with self.capability_enabled("item_convert_to_variant"), self.set_user(user.name):
+		with self.capability_enabled("item_convert_to_variant"), set_user(user.name):
 			self.assertTrue(convert_to_variant(item.name, template.name, {"Colour": "Red"}))
 
 		self.assertEqual(frappe.db.get_value("Item", item.name, "variant_of"), template.name)
@@ -149,7 +171,7 @@ class TestConvertToVariantPermissions(JailbreakIntegrationTestCase):
 		item = make_item("_JB Test Convert Perm SysMan")
 		template = make_item_template()
 
-		with self.capability_enabled("item_convert_to_variant"), self.set_user(user.name):
+		with self.capability_enabled("item_convert_to_variant"), set_user(user.name):
 			self.assertTrue(convert_to_variant(item.name, template.name, {"Colour": "Red"}))
 
 		self.assertEqual(frappe.db.get_value("Item", item.name, "variant_of"), template.name)
