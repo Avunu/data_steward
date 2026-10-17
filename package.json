@@ -1,6 +1,6 @@
 {
 	"name": "jailbreak",
-	"version": "0.0.1",
+	"version": "16.0.0",
 	"private": true,
 	"description": "Add destructive superpowers to any Frappe site.",
 	"license": "MIT",
