@@ -8,9 +8,12 @@ from jailbreak.api import assert_capability
 from jailbreak.jailbreak.doctype.jailbreak_settings.jailbreak_settings import require_roles
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def set_clearance_date(payment_entry_name: str, clearance_date: str | None) -> str:
-	"""Set clearance date for a payment entry."""
+	"""Set clearance date for a payment entry.
+
+	No commit here: the request commits on success and rolls back on an error.
+	"""
 	# Check if the payment entry set clearance date capability is enabled
 	assert_capability("payment_entry_set_clearance_date")
 	require_roles("Accounts Manager", "System Manager")
@@ -19,16 +22,11 @@ def set_clearance_date(payment_entry_name: str, clearance_date: str | None) -> s
 	payment_entry.check_permission("write")
 	old_clearance_date = payment_entry.get("clearance_date")
 
-	try:
-		frappe.db.set_value("Payment Entry", payment_entry_name, "clearance_date", clearance_date)
-		payment_entry.add_comment(
-			"Edit",
-			_("Clearance Date changed from {0} to {1}").format(
-				old_clearance_date or _("(none)"), clearance_date or _("(none)")
-			),
-		)
-		frappe.db.commit()
-		return f"Payment Entry {payment_entry_name} clearance date set to {clearance_date}."
-	except Exception as e:
-		frappe.log_error(frappe.get_traceback(), _("Payment Entry Set Clearance Date Error"))
-		frappe.throw(_("Error setting payment entry clearance date: {0}").format(str(e)))
+	frappe.db.set_value("Payment Entry", payment_entry_name, "clearance_date", clearance_date)
+	payment_entry.add_comment(
+		"Edit",
+		_("Clearance Date changed from {0} to {1}").format(
+			old_clearance_date or _("(none)"), clearance_date or _("(none)")
+		),
+	)
+	return f"Payment Entry {payment_entry_name} clearance date set to {clearance_date}."

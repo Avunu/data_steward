@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import frappe
+from frappe.tests.classes.context_managers import set_user
 
 from jailbreak.jailbreak.hooks.payment_entry import set_clearance_date
 from jailbreak.tests import JailbreakIntegrationTestCase
@@ -54,7 +55,7 @@ class TestSetClearanceDatePermissions(JailbreakIntegrationTestCase):
 
 		with (
 			self.capability_enabled("payment_entry_set_clearance_date"),
-			self.set_user(user.name),
+			set_user(user.name),
 			self.assertRaises(frappe.PermissionError),
 		):
 			set_clearance_date(pe.name, "2021-06-15")
@@ -69,7 +70,7 @@ class TestSetClearanceDatePermissions(JailbreakIntegrationTestCase):
 
 		with (
 			self.capability_enabled("payment_entry_set_clearance_date"),
-			self.set_user(user.name),
+			set_user(user.name),
 			self.assertRaises(frappe.PermissionError),
 		):
 			set_clearance_date(pe.name, "2021-06-15")
@@ -80,7 +81,7 @@ class TestSetClearanceDatePermissions(JailbreakIntegrationTestCase):
 		user = make_user("jb_test_pe_sysman@example.com", "System Manager", "Accounts User")
 		pe = make_payment_entry(reference_no="_JB-PERM-PE-3")
 
-		with self.capability_enabled("payment_entry_set_clearance_date"), self.set_user(user.name):
+		with self.capability_enabled("payment_entry_set_clearance_date"), set_user(user.name):
 			set_clearance_date(pe.name, "2021-06-15")
 
 		self.assertEqual(str(frappe.db.get_value("Payment Entry", pe.name, "clearance_date")), "2021-06-15")
@@ -90,7 +91,7 @@ class TestSetClearanceDatePermissions(JailbreakIntegrationTestCase):
 		user = make_user("jb_test_pe_accounts_manager@example.com", "Accounts Manager")
 		pe = make_payment_entry(reference_no="_JB-PERM-PE-4")
 
-		with self.capability_enabled("payment_entry_set_clearance_date"), self.set_user(user.name):
+		with self.capability_enabled("payment_entry_set_clearance_date"), set_user(user.name):
 			set_clearance_date(pe.name, "2021-06-15")
 
 		self.assertEqual(str(frappe.db.get_value("Payment Entry", pe.name, "clearance_date")), "2021-06-15")

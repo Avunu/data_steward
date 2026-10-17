@@ -14,10 +14,14 @@ opinion about it.
 
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import frappe
+import frappe.defaults
 from frappe.utils import nowdate
+
+if TYPE_CHECKING:
+	from frappe.core.doctype.user.user import User
 
 PREFIX = "_JB Test"
 
@@ -105,7 +109,8 @@ def make_item_template(
 
 
 def _bank_gl_account(name: str = f"{PREFIX} Bank") -> str:
-	full_name = f"{name} - LC"
+	abbr = frappe.get_cached_value("Company", company(), "abbr")
+	full_name = f"{name} - {abbr}"
 	if frappe.db.exists("Account", full_name):
 		return full_name
 	parent = cast(
@@ -252,7 +257,7 @@ def make_payment_entry(*, reference_no: str = "_JB-PROBE-1", **fields: Any) -> A
 	)
 
 
-def make_user(email: str, *roles: str) -> Any:
+def make_user(email: str, *roles: str) -> User:
 	"""A System User holding exactly `roles` (plus the automatic ones), for
 	the role checks in front of every whitelisted endpoint. Idempotent on
 	`email`; an existing user has its roles reset to `roles`."""
@@ -270,6 +275,7 @@ def make_user(email: str, *roles: str) -> Any:
 				}
 			)
 		)
+	user = cast("User", user)
 	user.flags.ignore_permissions = True
 	user.set("roles", [])
 	user.add_roles(*roles)

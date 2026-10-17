@@ -9,7 +9,7 @@ from jailbreak.api import assert_capability
 from jailbreak.jailbreak.doctype.jailbreak_settings.jailbreak_settings import require_roles
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def bulk_merge(doctype: str, rows: str) -> list[str]:
 	# Check if global bulk merge capability is enabled
 	assert_capability("global_bulk_merge")
@@ -19,6 +19,5 @@ def bulk_merge(doctype: str, rows: str) -> list[str]:
 
 	from frappe.model.rename_doc import bulk_rename
 
-	rows = json.loads(rows)
-
-	return bulk_rename(doctype, rows)
+	# bulk_rename returns None only when run from the console
+	return bulk_rename(doctype, json.loads(rows)) or []

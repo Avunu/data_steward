@@ -5,7 +5,7 @@
 window.jailbreak = {
 	/**
 	 * Check if a jailbreak capability is enabled (for UI decisions)
-	 * @param {string} capability - The capability to check
+	 * @param {JailbreakCapability} capability - The capability to check
 	 * @returns {Promise<boolean>} - Promise that resolves to true if enabled, false otherwise
 	 */
 	check_capability: function (capability) {
@@ -16,7 +16,7 @@ window.jailbreak = {
 					capability: capability,
 				},
 				callback: function (r) {
-					resolve(r.message || false);
+					resolve(Boolean(r.message));
 				},
 				error: function () {
 					resolve(false);

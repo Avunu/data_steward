@@ -15,6 +15,7 @@ build-backend = "flit_core.buildapi"
 
 [tool.bench.frappe-dependencies]
 frappe = ">=16.0.0,<17.0.0"
+erpnext = ">=16.0.0,<17.0.0"
 
 # These dependencies are only installed when developer mode is enabled
 [tool.bench.dev-dependencies]
@@ -38,6 +39,7 @@ docstring-code-format = true
 schema = 1
 profile = "github:Avunu/frappe-standards-profile/main"
 frappe-major = 16
+siblings = ["erpnext"]
 
 [tool.frappe-nix.dev-shell]
 frappe-nix-url = "github:Avunu/frappe-nix/e95f67f97de1322c89df9ffbc9218c31d4ca83ba"
@@ -59,7 +61,7 @@ show_missing = true
 skip_covered = true
 precision = 1
 exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError", "@(abc\\.)?abstractmethod"]
-fail_under = 0
+fail_under = 95
 
 [tool.vulture]
 exclude = [".venv/", "node_modules/", ".frappe-nix/", ".dev-dist/"]
@@ -67,6 +69,7 @@ exclude = [".venv/", "node_modules/", ".frappe-nix/", ".dev-dist/"]
 [tool.test_utils.static-analysis]
 whitelist = [
 	"frappe.*",
+	"erpnext.*",
 	# Old dotted paths kept as keys of override_whitelisted_methods in hooks.py.
 	"jailbreak.assert_capability",
 	"jailbreak.check_capability",

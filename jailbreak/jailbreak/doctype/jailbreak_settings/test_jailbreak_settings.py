@@ -9,7 +9,11 @@ caller actually goes through (`jailbreak.api.check_capability`,
 
 from __future__ import annotations
 
+from contextlib import AbstractContextManager
+from unittest.mock import patch
+
 import frappe
+from frappe.tests.classes.context_managers import set_user
 
 from jailbreak.jailbreak.doctype.jailbreak_settings.jailbreak_settings import (
 	assert_capability,
@@ -46,6 +50,23 @@ class TestAssertCapability(JailbreakIntegrationTestCase):
 	def test_unknown_capability_raises_validation_error(self):
 		with self.assertRaises(frappe.ValidationError):
 			assert_capability("not_a_real_capability")
+
+
+class TestMissingSettings(JailbreakIntegrationTestCase):
+	"""A Single always loads, but if `Jailbreak Settings` cannot be read the
+	check fails closed: `check_capability` is False and `assert_capability`
+	raises DoesNotExistError."""
+
+	def _missing(self) -> AbstractContextManager[object]:
+		return patch.object(frappe, "get_cached_doc", side_effect=frappe.DoesNotExistError)
+
+	def test_check_capability_is_false(self):
+		with self._missing():
+			self.assertFalse(check_capability("global_bulk_merge"))
+
+	def test_assert_capability_raises_does_not_exist(self):
+		with self._missing(), self.assertRaises(frappe.DoesNotExistError):
+			assert_capability("global_bulk_merge")
 
 
 class TestTopLevelWrappers(JailbreakIntegrationTestCase):
@@ -85,14 +106,14 @@ class TestTopLevelWrappers(JailbreakIntegrationTestCase):
 class TestRequireRoles(JailbreakIntegrationTestCase):
 	def test_user_without_any_listed_role_raises_permission_error(self):
 		user = make_user("jb_test_roles_none@example.com")
-		with self.set_user(user.name), self.assertRaises(frappe.PermissionError):
+		with set_user(user.name), self.assertRaises(frappe.PermissionError):
 			require_roles("Accounts Manager", "System Manager")
 
 	def test_any_one_listed_role_is_enough(self):
 		user = make_user("jb_test_roles_sysman@example.com", "System Manager")
-		with self.set_user(user.name):
+		with set_user(user.name):
 			self.assertIsNone(require_roles("Accounts Manager", "System Manager"))
 
 	def test_administrator_always_passes(self):
-		with self.set_user("Administrator"):
+		with set_user("Administrator"):
 			self.assertIsNone(require_roles("Accounts Manager"))

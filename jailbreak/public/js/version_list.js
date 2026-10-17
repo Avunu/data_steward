@@ -3,7 +3,14 @@
 
 /* global jailbreak */
 
+/**
+ * What `jailbreak.jailbreak.overrides.version.bulk_restore` returns.
+ * @typedef {{ version: string, new_name: string }} RestoredVersion
+ * @typedef {{ restored: RestoredVersion[], invalid: string[], failed: string[] }} BulkRestoreResult
+ */
+
 frappe.listview_settings["Version"] = {
+	/** @param {frappe.views.ListView} doclist */
 	onload: function (doclist) {
 		// Version restore is temporarily disabled server-side (it never actually
 		// reverted anything), so don't offer the bulk action. Kept for the rewrite.
@@ -21,12 +28,14 @@ frappe.listview_settings["Version"] = {
 						frappe.call({
 							method: "jailbreak.jailbreak.overrides.version.bulk_restore",
 							args: { docnames },
+							/** @param {{ message?: BulkRestoreResult }} r */
 							callback: function (r) {
 								if (r.message) {
+									/** @param {Array<RestoredVersion | string>} restored_items */
 									let body = (restored_items) => {
 										const html = restored_items.map((item) => {
-											const version = item.version || item;
-											const new_name = item.new_name || "";
+											const version = typeof item === "string" ? item : item.version;
+											const new_name = typeof item === "string" ? "" : item.new_name;
 											if (new_name) {
 												return `<li>Version ${version} restored as <a href='/app/form/${new_name}'>${new_name}</a></li>`;
 											} else {
@@ -36,6 +45,10 @@ frappe.listview_settings["Version"] = {
 										return "<br><ul>" + html.join("");
 									};
 
+									/**
+									 * @param {string} title
+									 * @param {Array<RestoredVersion | string>} items
+									 */
 									let message = (title, items) => {
 										return items.length > 0 ? title + body(items) + "</ul>" : "";
 									};

@@ -14,6 +14,10 @@
       url = "github:Avunu/frappe-standards-profile/main";
       flake = false;
     };
+    erpnext = {
+      url = "github:frappe/erpnext/version-16";
+      flake = false;
+    };
     # frappe-nix:local-begin inputs
     # frappe-nix:local-end inputs
   };
@@ -53,7 +57,12 @@
                 enable = true;
                 frappeVersion = "version-16";
                 inherit (inputs) frappe;
-                siblings = [ ];
+                siblings = [
+                  {
+                    name = "erpnext";
+                    src = inputs.erpnext;
+                  }
+                ];
               };
             };
           };

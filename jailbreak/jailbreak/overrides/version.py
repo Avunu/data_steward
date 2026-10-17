@@ -1,107 +1,45 @@
 # Copyright (c) 2026, Avunu LLC and contributors
 # For license information, please see license.txt
 
-import json
+"""Version restore, disabled until it is rewritten.
+
+`Version.data` is a diff (`{"changed": [[field, old, new], ...], ...}`), not a
+snapshot, so the old restore applied nothing to the document while still
+marking the Version restored and reporting success. Both entry points now
+refuse. The rewrite replays the diff's old values onto the live document
+instead; the old implementation is in git history (`git show
+ff88498:jailbreak/jailbreak/overrides/version.py`) if it is wanted for
+reference.
+"""
+
+from typing import NoReturn
 
 import frappe
 from frappe import _
 from frappe.core.doctype.version.version import Version as BaseVersion
-from frappe.desk.doctype.bulk_update.bulk_update import show_progress
-from frappe.model.document import Document
 from frappe.types import DF
 
-from jailbreak.api import assert_capability
+
+def _restore_disabled() -> NoReturn:
+	frappe.throw(_("Version restore is temporarily disabled"))
+	raise AssertionError  # pragma: no cover - frappe.throw always raises
 
 
 class Version(BaseVersion):
-	"""Custom Version override to jailbreak with restore functionality."""
+	"""Adds restore to Version, registered through `extend_doctype_class`."""
 
-	# Custom fields from item.json
+	# Custom Field from custom/version.json
 	restored: DF.Check
 
 	@frappe.whitelist()
 	def restore(self, alert: bool = True) -> str:
-		"""Restore a version by creating a new document with the version data."""
-		# Disabled: Version.data is a diff, not a snapshot, so this never
-		# reverted anything while still reporting success. The code below is
-		# kept as the starting point for the rewrite.
-		frappe.throw(_("Version restore is temporarily disabled"))
-
-		# Check if the version restore capability is enabled
-		assert_capability("version_restore")
-
-		# Check if the document exists
-		if not frappe.db.exists(self.ref_doctype, self.docname):
-			frappe.throw(_("Document {0} does not exist").format(self.docname))
-
-		# Check if the version is already restored
-		if self.restored:
-			frappe.throw(
-				_("Version {0} Already Restored").format(self.name),
-				exc=frappe.DocumentAlreadyRestored,
-			)
-
-		# Parse the version data similar to deleted document
-		version_data: dict
-		data = self.data
-		if isinstance(data, str):
-			version_data = json.loads(data)
-		else:
-			frappe.throw(_("Invalid version data format"))
-
-		# Update the document with version data
-		doc: Document
-		try:
-			doc = frappe.get_doc(self.ref_doctype, self.docname)
-			doc.update(version_data)
-
-		except frappe.DocstatusTransitionError:
-			frappe.msgprint(_("Cancelled Document restored as Draft"))
-			doc.docstatus = 0
-			doc.save()
-
-		doc.add_comment("Edit", _("restored from version {0} as {1}").format(self.name, doc.name))
-
-		# Mark version as restored
-		self.set("restored", 1)
-		self.db_update()
-
-		if alert:
-			frappe.msgprint(_("Version Restored as {0}").format(doc.name))
-
-		return doc.name
+		"""Restore the document to this version. Disabled: see the module docstring."""
+		del alert  # kept in the signature for desk callers; unused while disabled
+		_restore_disabled()
 
 
 @frappe.whitelist()
 def bulk_restore(docnames: str | list[str]) -> dict:
-	"""Bulk restore multiple versions."""
-	# Disabled along with Version.restore - see there.
-	frappe.throw(_("Version restore is temporarily disabled"))
-
-	docnames = frappe.parse_json(docnames)
-	message = _("Restoring Version")
-	restored, invalid, failed = [], [], []
-
-	for i, d in enumerate(docnames):
-		try:
-			show_progress(docnames, message, i + 1, d)
-			version: Version = Version("Version", d)
-			if version.restored:
-				invalid.append(d)
-				continue
-
-			# Restore the version
-			new_name = version.restore(alert=False)
-			frappe.db.commit()
-			restored.append({"version": d, "new_name": new_name})
-
-		except frappe.DocumentAlreadyRestored:
-			frappe.clear_last_message()
-			invalid.append(d)
-
-		except Exception:
-			frappe.clear_last_message()
-			failed.append(d)
-			frappe.db.rollback()
-
-	return {"restored": restored, "invalid": invalid, "failed": failed}
+	"""Restore several versions. Disabled along with `Version.restore`."""
+	del docnames  # kept in the signature for desk callers; unused while disabled
+	_restore_disabled()
