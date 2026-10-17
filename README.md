@@ -1,3 +1,6 @@
+<!-- Copyright (c) 2026, Avunu LLC and contributors
+For license information, please see license.txt-->
+
 <img src="https://github.com/user-attachments/assets/f0aa1054-51c1-41b3-b5ea-0111b1c67aef" alt="Deranged Frappe Barista" width="300">
 
 ### Jailbreak
@@ -11,30 +14,35 @@ Jailbreak is a Frappe app of opt-in administrative power tools for the cases whe
 Jailbreak is a collection of various hacks, mods, and anti-features you probably don't want enabled on your Frappe sites... but if you do, they can be individually enabled in all their perilous grandeur:
 
 ### 🔀 Global Bulk Merge
+
 - **Description**: Merge multiple records across any DocType
 - **Location**: Available as "Merge Selected" action in all list views
 - **Usage**: Select 2+ records in any list view and use the "Merge Selected" action
 - **Requires**: System Manager
 
 ### 📦 Item Convert to Variant
+
 - **Description**: Convert existing Items into variants of template Items
 - **Location**: Item form → Actions → "Convert to Variant"
 - **Usage**: Select a template item and specify attribute values to convert the current item
 - **Requires**: Item Manager or System Manager, plus write permission on the Item
 
 ### 🏦 Clearance Date Corrections
+
 - **Description**: Set a Payment Entry's clearance date; manually clear a Journal Entry against its matching Bank Transaction, or remove its clearance date
 - **Location**: Payment Entry form → "Set Clearance Date"; Journal Entry form → Actions → "Manually Clear" / "Remove Clearance"
 - **Requires**: Accounts Manager or System Manager, plus write permission on the document. Every change is recorded as a comment on the document.
 
 ### 🔄 Version Restore (temporarily disabled)
+
 - **Description**: Restore documents from their version history. Currently disabled: it reported success without reverting anything, and is being rewritten.
 - **Location**: Version list view and individual Version forms
-- **Usage**: 
+- **Usage**:
   - **List View**: Select versions and use "Restore" bulk action
   - **Form View**: Click "Restore" button on individual versions
 
 ### 🖥️ Full Width Interface
+
 - **Description**: Automatically enables full-width container layout
 - **Usage**: Automatically applied when the app is installed (no capability gate)
 

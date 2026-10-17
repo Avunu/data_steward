@@ -52,10 +52,12 @@ class TestSetClearanceDatePermissions(JailbreakIntegrationTestCase):
 		user = make_user("jb_test_pe_accounts_user@example.com", "Accounts User")
 		pe = make_payment_entry(reference_no="_JB-PERM-PE-1")
 
-		with self.capability_enabled("payment_entry_set_clearance_date"):
-			with self.set_user(user.name):
-				with self.assertRaises(frappe.PermissionError):
-					set_clearance_date(pe.name, "2021-06-15")
+		with (
+			self.capability_enabled("payment_entry_set_clearance_date"),
+			self.set_user(user.name),
+			self.assertRaises(frappe.PermissionError),
+		):
+			set_clearance_date(pe.name, "2021-06-15")
 
 		self.assertIsNone(frappe.db.get_value("Payment Entry", pe.name, "clearance_date"))
 		self.assertFalse(self._clearance_comment_exists(pe.name))
@@ -65,10 +67,12 @@ class TestSetClearanceDatePermissions(JailbreakIntegrationTestCase):
 		user = make_user("jb_test_pe_sysman_only@example.com", "System Manager")
 		pe = make_payment_entry(reference_no="_JB-PERM-PE-2")
 
-		with self.capability_enabled("payment_entry_set_clearance_date"):
-			with self.set_user(user.name):
-				with self.assertRaises(frappe.PermissionError):
-					set_clearance_date(pe.name, "2021-06-15")
+		with (
+			self.capability_enabled("payment_entry_set_clearance_date"),
+			self.set_user(user.name),
+			self.assertRaises(frappe.PermissionError),
+		):
+			set_clearance_date(pe.name, "2021-06-15")
 
 		self.assertIsNone(frappe.db.get_value("Payment Entry", pe.name, "clearance_date"))
 
@@ -76,9 +80,8 @@ class TestSetClearanceDatePermissions(JailbreakIntegrationTestCase):
 		user = make_user("jb_test_pe_sysman@example.com", "System Manager", "Accounts User")
 		pe = make_payment_entry(reference_no="_JB-PERM-PE-3")
 
-		with self.capability_enabled("payment_entry_set_clearance_date"):
-			with self.set_user(user.name):
-				set_clearance_date(pe.name, "2021-06-15")
+		with self.capability_enabled("payment_entry_set_clearance_date"), self.set_user(user.name):
+			set_clearance_date(pe.name, "2021-06-15")
 
 		self.assertEqual(str(frappe.db.get_value("Payment Entry", pe.name, "clearance_date")), "2021-06-15")
 		self.assertTrue(self._clearance_comment_exists(pe.name))
@@ -87,9 +90,8 @@ class TestSetClearanceDatePermissions(JailbreakIntegrationTestCase):
 		user = make_user("jb_test_pe_accounts_manager@example.com", "Accounts Manager")
 		pe = make_payment_entry(reference_no="_JB-PERM-PE-4")
 
-		with self.capability_enabled("payment_entry_set_clearance_date"):
-			with self.set_user(user.name):
-				set_clearance_date(pe.name, "2021-06-15")
+		with self.capability_enabled("payment_entry_set_clearance_date"), self.set_user(user.name):
+			set_clearance_date(pe.name, "2021-06-15")
 
 		self.assertEqual(str(frappe.db.get_value("Payment Entry", pe.name, "clearance_date")), "2021-06-15")
 		self.assertTrue(self._clearance_comment_exists(pe.name))

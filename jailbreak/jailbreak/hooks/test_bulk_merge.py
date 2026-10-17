@@ -41,10 +41,12 @@ class TestBulkMerge(JailbreakIntegrationTestCase):
 		user = make_user("jb_test_merge_item_manager@example.com", "Item Manager")
 		item = make_item("_JB Test Bulk Perm Denied")
 
-		with self.capability_enabled("global_bulk_merge"):
-			with self.set_user(user.name):
-				with self.assertRaises(frappe.PermissionError):
-					bulk_merge("Item", json.dumps([[item.name, "_JB Test Bulk Perm Denied Renamed"]]))
+		with (
+			self.capability_enabled("global_bulk_merge"),
+			self.set_user(user.name),
+			self.assertRaises(frappe.PermissionError),
+		):
+			bulk_merge("Item", json.dumps([[item.name, "_JB Test Bulk Perm Denied Renamed"]]))
 
 		self.assertTrue(frappe.db.exists("Item", item.name))
 
@@ -53,9 +55,8 @@ class TestBulkMerge(JailbreakIntegrationTestCase):
 		user = make_user("jb_test_merge_sysman@example.com", "System Manager", "Item Manager")
 		item = make_item("_JB Test Bulk Perm Old")
 
-		with self.capability_enabled("global_bulk_merge"):
-			with self.set_user(user.name):
-				result = bulk_merge("Item", json.dumps([[item.name, "_JB Test Bulk Perm New"]]))
+		with self.capability_enabled("global_bulk_merge"), self.set_user(user.name):
+			result = bulk_merge("Item", json.dumps([[item.name, "_JB Test Bulk Perm New"]]))
 
 		self.assertEqual(result, [f"Successful: {item.name} to _JB Test Bulk Perm New"])
 		self.assertTrue(frappe.db.exists("Item", "_JB Test Bulk Perm New"))

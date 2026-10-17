@@ -1,3 +1,6 @@
+// Copyright (c) 2026, Avunu LLC and contributors
+// For license information, please see license.txt
+
 /* global jailbreak */
 
 // Custom Script for Item DocType
@@ -12,7 +15,7 @@ frappe.ui.form.on("Item", {
 						function () {
 							show_variant_dialog(frm);
 						},
-						__("Actions")
+						__("Actions"),
 					);
 				}
 			});
@@ -40,7 +43,7 @@ function show_variant_dialog(frm) {
 		primary_action: function () {
 			let template = template_dialog.get_value("template_item");
 			if (template) {
-				load_attributes_and_show_dialog(template, frm);
+				load_attributes_and_show_dialog(template);
 				template_dialog.hide();
 			}
 		},
@@ -48,7 +51,7 @@ function show_variant_dialog(frm) {
 
 	template_dialog.show();
 
-	function load_attributes_and_show_dialog(template, frm) {
+	function load_attributes_and_show_dialog(template) {
 		frappe.db.get_doc("Item", template).then((template_doc) => {
 			let attributes = template_doc.attributes || [];
 			if (!attributes.length) {
@@ -90,9 +93,7 @@ function show_variant_dialog(frm) {
 						label: __(attr_doc.attribute_name),
 						fieldname: `attribute_${attr_doc.name}`,
 						fieldtype: "Select",
-						options: attr_doc.item_attribute_values
-							.map((a) => a.attribute_value)
-							.join("\n"),
+						options: attr_doc.item_attribute_values.map((a) => a.attribute_value).join("\n"),
 						reqd: 1,
 					});
 				});

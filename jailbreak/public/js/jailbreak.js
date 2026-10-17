@@ -1,3 +1,6 @@
+// Copyright (c) 2026, Avunu LLC and contributors
+// For license information, please see license.txt
+
 // Global jailbreak object for capability checking
 window.jailbreak = {
 	/**
@@ -8,7 +11,7 @@ window.jailbreak = {
 	check_capability: function (capability) {
 		return new Promise((resolve) => {
 			frappe.call({
-				method: "jailbreak.check_capability",
+				method: "jailbreak.api.check_capability",
 				args: {
 					capability: capability,
 				},

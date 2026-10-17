@@ -3,9 +3,9 @@
 
 """S1 coverage for the two functions every other whitelisted function in this
 app calls first: `assert_capability`/`check_capability`. Also covers the
-identical top-level wrappers in `jailbreak/__init__.py`, since that is the
-path every JS caller actually goes through (`jailbreak.check_capability`,
-`jailbreak.assert_capability`)."""
+identical wrappers in `jailbreak/api.py`, since that is the path every JS
+caller actually goes through (`jailbreak.api.check_capability`,
+`jailbreak.api.assert_capability`)."""
 
 from __future__ import annotations
 
@@ -49,31 +49,44 @@ class TestAssertCapability(JailbreakIntegrationTestCase):
 
 
 class TestTopLevelWrappers(JailbreakIntegrationTestCase):
-	"""`jailbreak/__init__.py`'s `assert_capability`/`check_capability` are
+	"""`jailbreak/api.py`'s `assert_capability`/`check_capability` are
 	the actual whitelisted entry points every JS caller reaches
-	(`jailbreak.check_capability` in `frappe.call`) - they just delegate to
+	(`jailbreak.api.check_capability` in `frappe.call`) - they just delegate to
 	the module above, but that delegation is worth pinning on its own."""
 
 	def test_wrapper_check_capability_delegates(self):
-		import jailbreak
+		from jailbreak import api
 
 		with self.capability_enabled("journal_entry_remove_clearance"):
-			self.assertTrue(jailbreak.check_capability("journal_entry_remove_clearance"))
+			self.assertTrue(api.check_capability("journal_entry_remove_clearance"))
 
 	def test_wrapper_assert_capability_delegates(self):
-		import jailbreak
+		from jailbreak import api
 
 		set_capability("journal_entry_remove_clearance", 0)
 		with self.assertRaises(frappe.PermissionError):
-			jailbreak.assert_capability("journal_entry_remove_clearance")
+			api.assert_capability("journal_entry_remove_clearance")
+
+	def test_pre_move_dotted_paths_still_resolve(self):
+		"""`override_whitelisted_methods` keeps `jailbreak.check_capability` and
+		`jailbreak.assert_capability` working after the move to `jailbreak.api`."""
+		from jailbreak import api
+
+		overrides = frappe.get_hooks("override_whitelisted_methods")
+		for old_path, fn in (
+			("jailbreak.check_capability", api.check_capability),
+			("jailbreak.assert_capability", api.assert_capability),
+		):
+			method = frappe.get_attr(overrides[old_path][-1])
+			self.assertIs(method, fn)
+			frappe.is_whitelisted(method)
 
 
 class TestRequireRoles(JailbreakIntegrationTestCase):
 	def test_user_without_any_listed_role_raises_permission_error(self):
 		user = make_user("jb_test_roles_none@example.com")
-		with self.set_user(user.name):
-			with self.assertRaises(frappe.PermissionError):
-				require_roles("Accounts Manager", "System Manager")
+		with self.set_user(user.name), self.assertRaises(frappe.PermissionError):
+			require_roles("Accounts Manager", "System Manager")
 
 	def test_any_one_listed_role_is_enough(self):
 		user = make_user("jb_test_roles_sysman@example.com", "System Manager")

@@ -67,9 +67,8 @@ class TestRestoreDisabled(JailbreakIntegrationTestCase):
 	def test_restore_throws_even_with_the_capability_enabled(self):
 		version = make_note_with_version(original="<p>original</p>", changed="<p>changed</p>")
 
-		with self.capability_enabled("version_restore"):
-			with self.assertRaises(frappe.ValidationError) as ctx:
-				Version("Version", version.name).restore(alert=False)
+		with self.capability_enabled("version_restore"), self.assertRaises(frappe.ValidationError) as ctx:
+			Version("Version", version.name).restore(alert=False)
 
 		self.assertIn("Version restore is temporarily disabled", str(ctx.exception))
 		self.assertFalse(frappe.db.get_value("Version", version.name, "restored"))
@@ -87,9 +86,8 @@ class TestBulkRestoreDisabled(JailbreakIntegrationTestCase):
 	def test_bulk_restore_throws_instead_of_reporting_success(self):
 		version = make_note_with_version()
 
-		with self.capability_enabled("version_restore"):
-			with self.assertRaises(frappe.ValidationError) as ctx:
-				bulk_restore(frappe.as_json([version.name]))
+		with self.capability_enabled("version_restore"), self.assertRaises(frappe.ValidationError) as ctx:
+			bulk_restore(frappe.as_json([version.name]))
 
 		self.assertIn("Version restore is temporarily disabled", str(ctx.exception))
 		self.assertFalse(frappe.db.get_value("Version", version.name, "restored"))

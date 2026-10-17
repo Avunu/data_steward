@@ -1,3 +1,6 @@
+# Copyright (c) 2026, Avunu LLC and contributors
+# For license information, please see license.txt
+
 import json
 
 import frappe
@@ -7,7 +10,7 @@ from frappe.desk.doctype.bulk_update.bulk_update import show_progress
 from frappe.model.document import Document
 from frappe.types import DF
 
-from jailbreak import assert_capability
+from jailbreak.api import assert_capability
 
 
 class Version(BaseVersion):

@@ -115,10 +115,12 @@ class TestJournalEntryClearancePermissions(JailbreakIntegrationTestCase):
 		user = make_user("jb_test_je_accounts_user@example.com", "Accounts User")
 		je = make_cleared_journal_entry()
 
-		with self.capability_enabled("journal_entry_manually_clear"):
-			with self.set_user(user.name):
-				with self.assertRaises(frappe.PermissionError):
-					manually_clear_journal_entry(je.name)
+		with (
+			self.capability_enabled("journal_entry_manually_clear"),
+			self.set_user(user.name),
+			self.assertRaises(frappe.PermissionError),
+		):
+			manually_clear_journal_entry(je.name)
 
 		self.assertIsNone(frappe.db.get_value("Journal Entry", je.name, "clearance_date"))
 		self.assertFalse(_clearance_comment_exists(je.name))
@@ -128,10 +130,12 @@ class TestJournalEntryClearancePermissions(JailbreakIntegrationTestCase):
 		je = make_journal_entry()
 		frappe.db.set_value("Journal Entry", je.name, "clearance_date", "2020-02-02")
 
-		with self.capability_enabled("journal_entry_remove_clearance"):
-			with self.set_user(user.name):
-				with self.assertRaises(frappe.PermissionError):
-					remove_clearance_date_journal_entry(je.name)
+		with (
+			self.capability_enabled("journal_entry_remove_clearance"),
+			self.set_user(user.name),
+			self.assertRaises(frappe.PermissionError),
+		):
+			remove_clearance_date_journal_entry(je.name)
 
 		self.assertEqual(str(frappe.db.get_value("Journal Entry", je.name, "clearance_date")), "2020-02-02")
 		self.assertFalse(_clearance_comment_exists(je.name))
@@ -141,18 +145,19 @@ class TestJournalEntryClearancePermissions(JailbreakIntegrationTestCase):
 		user = make_user("jb_test_je_sysman_only@example.com", "System Manager")
 		je = make_cleared_journal_entry()
 
-		with self.capability_enabled("journal_entry_manually_clear"):
-			with self.set_user(user.name):
-				with self.assertRaises(frappe.PermissionError):
-					manually_clear_journal_entry(je.name)
+		with (
+			self.capability_enabled("journal_entry_manually_clear"),
+			self.set_user(user.name),
+			self.assertRaises(frappe.PermissionError),
+		):
+			manually_clear_journal_entry(je.name)
 
 	def test_system_manager_manually_clears_and_comments(self):
 		user = make_user("jb_test_je_sysman@example.com", "System Manager", "Accounts User")
 		je = make_cleared_journal_entry(clearance_date="2020-02-02")
 
-		with self.capability_enabled("journal_entry_manually_clear"):
-			with self.set_user(user.name):
-				manually_clear_journal_entry(je.name)
+		with self.capability_enabled("journal_entry_manually_clear"), self.set_user(user.name):
+			manually_clear_journal_entry(je.name)
 
 		self.assertEqual(str(frappe.db.get_value("Journal Entry", je.name, "clearance_date")), "2020-02-02")
 		self.assertTrue(_clearance_comment_exists(je.name))
@@ -162,9 +167,8 @@ class TestJournalEntryClearancePermissions(JailbreakIntegrationTestCase):
 		je = make_journal_entry()
 		frappe.db.set_value("Journal Entry", je.name, "clearance_date", "2020-02-02")
 
-		with self.capability_enabled("journal_entry_remove_clearance"):
-			with self.set_user(user.name):
-				remove_clearance_date_journal_entry(je.name)
+		with self.capability_enabled("journal_entry_remove_clearance"), self.set_user(user.name):
+			remove_clearance_date_journal_entry(je.name)
 
 		self.assertIsNone(frappe.db.get_value("Journal Entry", je.name, "clearance_date"))
 		self.assertTrue(_clearance_comment_exists(je.name))
