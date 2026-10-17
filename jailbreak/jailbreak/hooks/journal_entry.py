@@ -32,7 +32,7 @@ def _add_clearance_comment(
 	)
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def manually_clear_journal_entry(journal_entry_name: str) -> str:
 	"""Manually clear a journal entry by finding matching bank transaction."""
 	# Check if the journal entry manually clear capability is enabled
@@ -59,7 +59,7 @@ def manually_clear_journal_entry(journal_entry_name: str) -> str:
 	return f"Journal Entry {journal_entry_name} cleared to {bank_transaction_date}."
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def remove_clearance_date_journal_entry(journal_entry_name: str) -> str:
 	"""Remove clearance date from a journal entry."""
 	# Check if the journal entry remove clearance capability is enabled

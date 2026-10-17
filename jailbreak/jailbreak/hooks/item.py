@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 	from erpnext.stock.doctype.item.item import Item
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def convert_to_variant(item: str, template: str, attribute_values: dict | str) -> bool:
 	"""Make `item` a variant of `template`, taking the template's attributes.
 

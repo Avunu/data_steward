@@ -9,7 +9,7 @@ from jailbreak.api import assert_capability
 from jailbreak.jailbreak.doctype.jailbreak_settings.jailbreak_settings import require_roles
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def bulk_merge(doctype: str, rows: str) -> list[str]:
 	# Check if global bulk merge capability is enabled
 	assert_capability("global_bulk_merge")

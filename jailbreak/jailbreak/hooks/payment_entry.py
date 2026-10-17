@@ -8,7 +8,7 @@ from jailbreak.api import assert_capability
 from jailbreak.jailbreak.doctype.jailbreak_settings.jailbreak_settings import require_roles
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def set_clearance_date(payment_entry_name: str, clearance_date: str | None) -> str:
 	"""Set clearance date for a payment entry.
 
