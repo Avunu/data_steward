@@ -1,7 +1,7 @@
 [project]
-name = "jailbreak"
+name = "data_steward"
 authors = [{ name = "Avunu LLC", email = "mail@avu.nu" }]
-description = "Add destructive superpowers to any Frappe site."
+description = "Audited data corrections for Frappe and ERPNext administrators."
 requires-python = ">=3.14"
 license = { text = "MIT" }
 classifiers = ["License :: OSI Approved :: MIT License"]
@@ -45,7 +45,7 @@ siblings = ["erpnext"]
 python-version = "3.14"
 
 [tool.ty.src]
-include = ["jailbreak"]
+include = ["data_steward"]
 
 [tool.ty.terminal]
 error-on-warning = true
@@ -64,10 +64,4 @@ fail_under = 95
 exclude = [".venv/", "node_modules/", ".frappe-nix/", ".dev-dist/", ".devenv/", ".direnv/"]
 
 [tool.test_utils.static-analysis]
-whitelist = [
-	"frappe.*",
-	"erpnext.*",
-	# Old dotted paths kept as keys of override_whitelisted_methods in hooks.py.
-	"jailbreak.assert_capability",
-	"jailbreak.check_capability",
-]
+whitelist = ["frappe.*", "erpnext.*"]

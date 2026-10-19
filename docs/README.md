@@ -1,34 +1,32 @@
-<img src="https://github.com/user-attachments/assets/f0aa1054-51c1-41b3-b5ea-0111b1c67aef" alt="Deranged Frappe Barista" width="300">
+### Data Steward
 
-### Jailbreak
+Audited data corrections for Frappe and ERPNext administrators.
 
-Add destructive superpowers to any Frappe site.
-
-Jailbreak is a Frappe app of opt-in administrative power tools for the cases where the standard guardrails get in the way: global bulk merge of records in any DocType, converting an existing Item into a variant of a template Item, restoring documents from their version history, and a handful of accounting corrections (for example setting a clearance date or marking a payment request as paid). Installing the app does not switch any of these on. Each tool is disabled until a System Manager enables it, one capability at a time, in Jailbreak Settings, and the server-side code re-checks the setting on every call, so hiding a button in the browser is not the only protection. The one exception is the full-width layout, which is a cosmetic default for the desk UI (it is skipped if you have already chosen a container width) and does not touch any data.
+Data Steward is a Frappe app of opt-in correction tools for the records the standard workflow cannot fix: merging duplicate records in any DocType, converting an existing Item into a variant of a template Item, and a few bank-clearance corrections (setting or removing a clearance date on a Payment Entry or Journal Entry). Installing the app does not switch any of these on. Each tool is disabled until a System Manager enables it, one capability at a time, in Data Steward Settings, and the server-side code re-checks the setting on every call, so hiding a button in the browser is not the only protection. Enabling a tool does not open it to every user either: each one also requires a role (see below) and the user's own write permission on the document, and every change leaves a comment on the document it touched. The one exception is the full-width layout, which is a cosmetic default for the desk UI (it is skipped if you have already chosen a container width) and does not touch any data.
 
 ## Features
 
-Jailbreak is a collection of various hacks, mods, and anti-features you probably don't want enabled on your Frappe sites... but if you do, they can be individually enabled in all their perilous grandeur:
+Each tool is enabled on its own, and only for the roles listed.
 
-### 🔀 Global Bulk Merge
+### 🔀 Bulk Merge
 
-- **Description**: Merge multiple records across any DocType
-- **Location**: Available as "Merge Selected" action in all list views
-- **Usage**: Select 2+ records in any list view and use the "Merge Selected" action
+- **Description**: Merge duplicate records in any DocType into one
+- **Location**: "Merge Selected" action in every list view
+- **Usage**: Select 2+ records in a list view and use the "Merge Selected" action
+- **Requires**: System Manager
 
 ### 📦 Item Convert to Variant
 
 - **Description**: Convert existing Items into variants of template Items
 - **Location**: Item form → Actions → "Convert to Variant"
 - **Usage**: Select a template item and specify attribute values to convert the current item
+- **Requires**: Item Manager or System Manager, plus write permission on the Item
 
-### 🔄 Version Restore
+### 🏦 Clearance Date Corrections
 
-- **Description**: Restore documents from their version history
-- **Location**: Version list view and individual Version forms
-- **Usage**:
-  - **List View**: Select versions and use "Restore" bulk action
-  - **Form View**: Click "Restore" button on individual versions
+- **Description**: Set a Payment Entry's clearance date; manually clear a Journal Entry against its matching Bank Transaction, or remove its clearance date
+- **Location**: Payment Entry form → "Set Clearance Date"; Journal Entry form → Actions → "Manually Clear" / "Remove Clearance"
+- **Requires**: Accounts Manager or System Manager, plus write permission on the document. Every change is recorded as a comment on the document.
 
 ### 🖥️ Full Width Interface
 
@@ -37,26 +35,30 @@ Jailbreak is a collection of various hacks, mods, and anti-features you probably
 
 ## Configuration
 
-All capabilities (except full-width) must be explicitly enabled in **Jailbreak Settings** before they become available to users.
+All capabilities (except full-width) must be explicitly enabled in **Data Steward Settings** before they become available to users. Changes to the settings are tracked.
 
-Navigate to: **Setup → Jailbreak Settings**
+Navigate to: **Setup → Data Steward Settings**
 
 Toggle the capabilities you want to enable.
 
-## Safety Features
+## Safeguards
 
-- **Capability Gating**: All destructive operations require explicit enablement
-- **Permission Checks**: Backend validation ensures capabilities are enabled before execution
+- **Capability Gating**: Every correction requires explicit enablement
+- **Permission Checks**: Backend validation ensures capabilities are enabled, and that the user holds the required role and document permission, before execution
 - **Error Handling**: Clear error messages when capabilities are disabled
-- **Audit Trail**: All operations create proper audit trails and comments
+- **Audit Trail**: Every correction adds a comment to the document it changed
+
+## Coming from Jailbreak
+
+Data Steward replaces the earlier `jailbreak` app. It has its own module and its own settings, so both can be installed on a site at once: install `data_steward`, then uninstall `jailbreak`. On install, Data Steward copies the capability toggles from Jailbreak Settings. Version restore, which `jailbreak` had already disabled, is not part of Data Steward.
 
 ### Installation
 
 You can install this app using the [bench](https://github.com/frappe/bench) CLI:
 
 ```bash
-bench get-app https://github.com/Avunu/jailbreak.git
-bench install-app jailbreak
+bench get-app https://github.com/Avunu/data_steward.git
+bench install-app data_steward
 ```
 
 ### Contributing
@@ -64,7 +66,7 @@ bench install-app jailbreak
 This app uses `pre-commit` for code formatting and linting. Please [install pre-commit](https://pre-commit.com/#installation) and enable it for this repository:
 
 ```bash
-cd apps/jailbreak
+cd apps/data_steward
 pre-commit install
 ```
 

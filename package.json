@@ -1,8 +1,8 @@
 {
-	"name": "jailbreak",
+	"name": "data_steward",
 	"version": "0.0.1",
 	"private": true,
-	"description": "Add destructive superpowers to any Frappe site.",
+	"description": "Audited data corrections for Frappe and ERPNext administrators.",
 	"license": "MIT",
 	"author": "Avunu LLC",
 	"type": "module",
