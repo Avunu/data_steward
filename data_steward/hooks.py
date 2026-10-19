@@ -20,5 +20,5 @@ doctype_js = {
 
 export_python_type_annotations = True
 
-# Copies the capability toggles from Data Steward Settings, when that app is still installed.
+# Copies the capability toggles from Jailbreak Settings, when the old jailbreak app is still installed.
 after_install = "data_steward.install.after_install"

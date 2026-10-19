@@ -51,10 +51,6 @@ Toggle the capabilities you want to enable.
 - **Error Handling**: Clear error messages when capabilities are disabled
 - **Audit Trail**: Every correction adds a comment to the document it changed
 
-## Coming from Jailbreak
-
-Data Steward replaces the earlier `jailbreak` app. It has its own module and its own settings, so both can be installed on a site at once: install `data_steward`, then uninstall `jailbreak`. On install, Data Steward copies the capability toggles from Jailbreak Settings. Version restore, which `jailbreak` had already disabled, is not part of Data Steward.
-
 ### Installation
 
 You can install this app using the [bench](https://github.com/frappe/bench) CLI:
@@ -63,6 +59,10 @@ You can install this app using the [bench](https://github.com/frappe/bench) CLI:
 bench get-app https://github.com/Avunu/data_steward.git
 bench install-app data_steward
 ```
+
+### Coming from Jailbreak
+
+Data Steward replaces the earlier `jailbreak` app. It has its own module and its own settings, so both can be installed on a site at once: install `data_steward`, then uninstall `jailbreak`. On install, Data Steward copies the capability toggles from Jailbreak Settings. Version restore, which `jailbreak` had already disabled, is not part of Data Steward.
 
 ### Contributing
 
