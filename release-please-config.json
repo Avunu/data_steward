@@ -6,12 +6,12 @@
 	"packages": {
 		".": {
 			"release-type": "node",
-			"package-name": "jailbreak",
+			"package-name": "data-steward",
 			"changelog-path": "CHANGELOG.md",
 			"extra-files": [
 				{
 					"type": "generic",
-					"path": "jailbreak/__init__.py"
+					"path": "data_steward/__init__.py"
 				}
 			]
 		}

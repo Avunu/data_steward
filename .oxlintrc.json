@@ -28,7 +28,7 @@
 		"unicorn/no-array-sort": "off"
 	},
 	"ignorePatterns": [
-		"jailbreak/public/dist/**",
+		"data_steward/public/dist/**",
 		".frappe-nix/**",
 		".dev-dist/**",
 		"nix/**",
@@ -48,21 +48,19 @@
 			}
 		},
 		{
-			"files": ["jailbreak/public/js/*.bundle.ts", "jailbreak/public/js/*.bundle.js"],
+			"files": ["data_steward/public/js/*.bundle.ts", "data_steward/public/js/*.bundle.js"],
 			"rules": {
 				"import/no-unassigned-import": "off"
 			}
 		},
 		{
 			"files": [
-				"jailbreak/public/js/full_width.js",
-				"jailbreak/public/js/item.js",
-				"jailbreak/public/js/jailbreak.js",
-				"jailbreak/public/js/journal_entry.js",
-				"jailbreak/public/js/merge_records.js",
-				"jailbreak/public/js/payment_entry.js",
-				"jailbreak/public/js/version.js",
-				"jailbreak/public/js/version_list.js"
+				"data_steward/public/js/data_steward.js",
+				"data_steward/public/js/full_width.js",
+				"data_steward/public/js/item.js",
+				"data_steward/public/js/journal_entry.js",
+				"data_steward/public/js/merge_records.js",
+				"data_steward/public/js/payment_entry.js"
 			],
 			"globals": {
 				"frappe": "readonly",
