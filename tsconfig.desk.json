@@ -4,13 +4,13 @@
 	"compilerOptions": {
 		"composite": true
 	},
-	"include": ["jailbreak/**/*.js", "types/doctypes.d.ts", "types/jailbreak.augment.d.ts"],
+	"include": ["data_steward/**/*.js", "types/doctypes.d.ts", "types/data_steward.augment.d.ts"],
 	"exclude": [
 		"node_modules",
 		"**/*.bundle.js",
 		"**/public/dist/**",
-		"jailbreak/www/**",
+		"data_steward/www/**",
 		"**/web_form/**",
-		"jailbreak/templates/**"
+		"data_steward/templates/**"
 	]
 }
