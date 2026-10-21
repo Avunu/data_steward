@@ -1,0 +1,10 @@
+# The app's registry listing (docs/app-standards/marketplace.md); frappe-listing check validates it.
+schema = 1
+title = "Data Steward"
+tagline = "Merge duplicate records, convert Items to variants and fix bank clearance dates"
+type = "utility"
+category = "Utilities"
+categories = ["Data Management", "Accounting"]
+website = "https://avunu.net/open-source/data_steward/"
+documentation = "https://docs.avunu.net/data-steward/"
+apps_screen = false

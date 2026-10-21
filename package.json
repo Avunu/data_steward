@@ -2,7 +2,7 @@
 	"name": "data_steward",
 	"version": "16.0.0",
 	"private": true,
-	"description": "Audited data corrections for Frappe and ERPNext administrators.",
+	"description": "Merge duplicate records, convert Items to variants and fix bank clearance dates",
 	"license": "MIT",
 	"author": "Avunu LLC",
 	"type": "module",
