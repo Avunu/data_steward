@@ -4,7 +4,7 @@
 app_name = "data_steward"
 app_title = "Data Steward"
 app_publisher = "Avunu LLC"
-app_description = "Audited data corrections for Frappe and ERPNext administrators."
+app_description = "Merge duplicate records, convert Items to variants and fix bank clearance dates"
 app_email = "mail@avu.nu"
 app_license = "MIT"
 

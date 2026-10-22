@@ -1,7 +1,7 @@
 [project]
 name = "data_steward"
 authors = [{ name = "Avunu LLC", email = "mail@avu.nu" }]
-description = "Audited data corrections for Frappe and ERPNext administrators."
+description = "Merge duplicate records, convert Items to variants and fix bank clearance dates"
 requires-python = ">=3.14"
 license = { text = "MIT" }
 classifiers = ["License :: OSI Approved :: MIT License"]

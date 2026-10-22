@@ -1,0 +1,62 @@
+[
+	{
+		"name": "convert-to-variant",
+		"theme": "dark",
+		"alt": "An existing Item being converted into a variant of the Classic T-Shirt template, with its colour and size picked",
+		"featured": true,
+		"readme": "feature",
+		"width": 2880,
+		"height": 1800,
+		"sha256": "bdabc10aaa260e22ae02537482b6666fd6420b4868473a7f24ba3a517a15b2b0"
+	},
+	{
+		"name": "convert-to-variant",
+		"theme": "light",
+		"alt": "An existing Item being converted into a variant of the Classic T-Shirt template, with its colour and size picked",
+		"featured": true,
+		"readme": "feature",
+		"width": 2880,
+		"height": 1800,
+		"sha256": "d0745afe4395c05a7104cc5455e7ad5c4b387375b7e39a4bbc5fb863916cefd3"
+	},
+	{
+		"name": "merge-records",
+		"theme": "dark",
+		"alt": "Three duplicate Customers ticked in the list view, and the Merge Records dialog asking which one to keep",
+		"featured": true,
+		"readme": "hero",
+		"width": 2880,
+		"height": 1800,
+		"sha256": "083bcac7252ebfd6eedbd9c2431e7106f1548efd5f9ba9c9af0235e68480dfde"
+	},
+	{
+		"name": "merge-records",
+		"theme": "light",
+		"alt": "Three duplicate Customers ticked in the list view, and the Merge Records dialog asking which one to keep",
+		"featured": true,
+		"readme": "hero",
+		"width": 2880,
+		"height": 1800,
+		"sha256": "9507d72de36749fa564f27383dd8a2bfdbfd8d2d3b072ad1333cb4be6a511500"
+	},
+	{
+		"name": "settings",
+		"theme": "dark",
+		"alt": "Data Steward Settings, with one check box for each tool",
+		"featured": false,
+		"readme": "feature",
+		"width": 2880,
+		"height": 1800,
+		"sha256": "c6c087c5d848ced03994648dc5e334b4a92732706b3623a30031579bec048e6c"
+	},
+	{
+		"name": "settings",
+		"theme": "light",
+		"alt": "Data Steward Settings, with one check box for each tool",
+		"featured": false,
+		"readme": "feature",
+		"width": 2880,
+		"height": 1800,
+		"sha256": "ebc82ecb6940609b7628d4025eede26bab46625e2407e8e24661772771220ded"
+	}
+]
