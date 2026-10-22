@@ -18,6 +18,9 @@ def _get_journal_entry_for_clearance(journal_entry_name: str) -> JournalEntry:
 	require_roles("Accounts Manager", "System Manager")
 	journal_entry = cast("JournalEntry", frappe.get_doc("Journal Entry", journal_entry_name))
 	journal_entry.check_permission("write")
+	# Bank clearance applies to submitted entries only; a draft's is wiped on save
+	if journal_entry.docstatus != 1:
+		frappe.throw(_("Only a submitted Journal Entry can have a clearance date."))
 	return journal_entry
 
 

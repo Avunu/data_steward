@@ -96,3 +96,30 @@ class TestSetClearanceDatePermissions(DataStewardIntegrationTestCase):
 
 		self.assertEqual(str(frappe.db.get_value("Payment Entry", pe.name, "clearance_date")), "2021-06-15")
 		self.assertTrue(self._clearance_comment_exists(pe.name))
+
+
+class TestSetClearanceDateDocstatus(DataStewardIntegrationTestCase):
+	"""Bank clearance applies to submitted entries only."""
+
+	def test_draft_is_refused(self):
+		pe = make_payment_entry(reference_no="_DS-STATUS-PE-1", submit=False)
+
+		with (
+			self.capability_enabled("payment_entry_set_clearance_date"),
+			self.assertRaises(frappe.ValidationError),
+		):
+			set_clearance_date(pe.name, "2021-06-15")
+
+		self.assertIsNone(frappe.db.get_value("Payment Entry", pe.name, "clearance_date"))
+
+	def test_cancelled_is_refused(self):
+		pe = make_payment_entry(reference_no="_DS-STATUS-PE-2")
+		pe.cancel()
+
+		with (
+			self.capability_enabled("payment_entry_set_clearance_date"),
+			self.assertRaises(frappe.ValidationError),
+		):
+			set_clearance_date(pe.name, "2021-06-15")
+
+		self.assertIsNone(frappe.db.get_value("Payment Entry", pe.name, "clearance_date"))

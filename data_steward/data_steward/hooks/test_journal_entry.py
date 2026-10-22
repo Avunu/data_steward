@@ -173,3 +173,52 @@ class TestJournalEntryClearancePermissions(DataStewardIntegrationTestCase):
 
 		self.assertIsNone(frappe.db.get_value("Journal Entry", je.name, "clearance_date"))
 		self.assertTrue(_clearance_comment_exists(je.name))
+
+
+class TestJournalEntryClearanceDocstatus(DataStewardIntegrationTestCase):
+	"""Bank clearance applies to submitted entries only."""
+
+	def test_manually_clear_refuses_a_draft(self):
+		je = make_journal_entry(submit=False)
+		make_bank_transaction(
+			date="2020-04-04",
+			deposit=25,
+			description="draft probe",
+			payment_entries=[
+				{"payment_document": "Journal Entry", "payment_entry": je.name, "allocated_amount": 25}
+			],
+		)
+
+		with (
+			self.capability_enabled("journal_entry_manually_clear"),
+			self.assertRaises(frappe.ValidationError),
+		):
+			manually_clear_journal_entry(je.name)
+
+		self.assertIsNone(frappe.db.get_value("Journal Entry", je.name, "clearance_date"))
+
+	def test_manually_clear_refuses_a_cancelled_entry(self):
+		je = make_cleared_journal_entry(clearance_date="2020-05-05")
+		je.cancel()
+
+		with (
+			self.capability_enabled("journal_entry_manually_clear"),
+			self.assertRaises(frappe.ValidationError),
+		):
+			manually_clear_journal_entry(je.name)
+
+		self.assertIsNone(frappe.db.get_value("Journal Entry", je.name, "clearance_date"))
+
+	def test_remove_clearance_refuses_a_cancelled_entry(self):
+		je = make_journal_entry()
+		frappe.db.set_value("Journal Entry", je.name, "clearance_date", "2020-02-02")
+		je.reload()
+		je.cancel()
+
+		with (
+			self.capability_enabled("journal_entry_remove_clearance"),
+			self.assertRaises(frappe.ValidationError),
+		):
+			remove_clearance_date_journal_entry(je.name)
+
+		self.assertEqual(str(frappe.db.get_value("Journal Entry", je.name, "clearance_date")), "2020-02-02")
