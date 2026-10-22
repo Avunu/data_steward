@@ -7,6 +7,9 @@
 // the button will find a matching bank transaction and set the corresponding "clearance_date" field
 frappe.ui.form.on("Journal Entry", {
 	refresh: function (frm) {
+		// Bank clearance applies to submitted entries only
+		if (frm.doc.docstatus !== 1) return;
+
 		// Check if journal entry manually clear capability is enabled
 		data_steward.check_capability("journal_entry_manually_clear").then((enabled) => {
 			if (enabled) {

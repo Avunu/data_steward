@@ -169,7 +169,7 @@ def make_bank_transaction(*, date: str = "2020-01-01", deposit: float = 100, **f
 	)
 
 
-def make_journal_entry(*, amount: float = 25, **fields: Any) -> Any:
+def make_journal_entry(*, amount: float = 25, submit: bool = True, **fields: Any) -> Any:
 	account1 = _bank_gl_account()
 	account2 = cast(
 		str,
@@ -188,7 +188,8 @@ def make_journal_entry(*, amount: float = 25, **fields: Any) -> Any:
 				],
 				**fields,
 			}
-		)
+		),
+		submit=submit,
 	)
 
 
@@ -208,7 +209,7 @@ def make_cleared_journal_entry(*, clearance_date: str = "2020-02-02", amount: fl
 	return je
 
 
-def make_payment_entry(*, reference_no: str = "_DS-PROBE-1", **fields: Any) -> Any:
+def make_payment_entry(*, reference_no: str = "_DS-PROBE-1", submit: bool = True, **fields: Any) -> Any:
 	paid_from = _bank_gl_account()
 	paid_to = cast(
 		str,
@@ -230,7 +231,8 @@ def make_payment_entry(*, reference_no: str = "_DS-PROBE-1", **fields: Any) -> A
 				"reference_date": fields.pop("reference_date", nowdate()),
 				**fields,
 			}
-		)
+		),
+		submit=submit,
 	)
 
 

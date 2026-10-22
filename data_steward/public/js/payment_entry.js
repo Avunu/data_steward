@@ -7,6 +7,9 @@
 // the button will set the corresponding "clearance_date" field
 frappe.ui.form.on("Payment Entry", {
 	refresh: function (frm) {
+		// Bank clearance applies to submitted entries only
+		if (frm.doc.docstatus !== 1) return;
+
 		// Check if payment entry set clearance date capability is enabled
 		data_steward.check_capability("payment_entry_set_clearance_date").then((enabled) => {
 			if (enabled) {

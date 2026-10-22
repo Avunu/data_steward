@@ -20,6 +20,9 @@ def set_clearance_date(payment_entry_name: str, clearance_date: str | None) -> s
 
 	payment_entry = frappe.get_doc("Payment Entry", payment_entry_name)
 	payment_entry.check_permission("write")
+	# Bank clearance applies to submitted entries only
+	if payment_entry.docstatus != 1:
+		frappe.throw(_("Only a submitted Payment Entry can have a clearance date."))
 	old_clearance_date = payment_entry.get("clearance_date")
 
 	frappe.db.set_value("Payment Entry", payment_entry_name, "clearance_date", clearance_date)

@@ -8,8 +8,8 @@ Frappe and ERPNext make some corrections hard on purpose. Data Steward adds a sm
 
 - **Bulk merge.** A **Merge Selected** action in every list view: tick two or more records, pick the one to keep, and the others are merged into it with Frappe's own rename-and-merge. System Manager only.
 - **Convert an Item to a variant.** **Actions → Convert to Variant** on the Item form: choose a template Item and a value for each of its attributes. Item Manager or System Manager.
-- **Payment Entry clearance date.** A **Set Clearance Date** button on the Payment Entry form. Accounts Manager or System Manager.
-- **Journal Entry clearance.** **Actions → Manually Clear** sets the clearance date from the Bank Transaction the entry is matched to; **Actions → Remove Clearance** clears it again. Accounts Manager or System Manager.
+- **Payment Entry clearance date.** A **Set Clearance Date** button on a submitted Payment Entry. Accounts Manager or System Manager.
+- **Journal Entry clearance.** On a submitted Journal Entry, **Actions → Manually Clear** sets the clearance date from the Bank Transaction the entry is matched to; **Actions → Remove Clearance** clears it again. Accounts Manager or System Manager.
 - **Full-width desk.** The desk uses the full screen width unless the user has already chosen a container width. This is the one part that is not behind a setting, and it changes no data.
 
 ## Setting it up
@@ -20,7 +20,6 @@ Open **Data Steward Settings** as a System Manager and tick only the tools you n
 
 - Merge Selected is shown in every list view, but Frappe only merges DocTypes with **Allow Rename** set.
 - The list view does not show the per-record merge log that Frappe returns; check the list after a large merge.
-- The clearance buttons are shown on every Payment Entry and Journal Entry, drafts and cancelled entries included.
 - Clearance changes are written straight to the database, so ERPNext does not re-check them against the reconciliation.
 
 ## Coming from Jailbreak
