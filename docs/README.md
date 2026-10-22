@@ -20,6 +20,7 @@ Open **Data Steward Settings** as a System Manager and tick only the tools you n
 
 - Merge Selected is shown in every list view, but Frappe only merges DocTypes with **Allow Rename** set.
 - The list view does not show the per-record merge log that Frappe returns; check the list after a large merge.
+- The clearance buttons are shown on every Payment Entry and Journal Entry, drafts and cancelled entries included.
 - Clearance changes are written straight to the database, so ERPNext does not re-check them against the reconciliation.
 
 ## Coming from Jailbreak

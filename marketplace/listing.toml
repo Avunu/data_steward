@@ -6,5 +6,5 @@ type = "utility"
 category = "Utilities"
 categories = ["Data Management", "Accounting"]
 website = "https://avunu.net/open-source/data_steward/"
-documentation = "https://docs.avunu.net/data-steward/"
+documentation = "https://github.com/Avunu/data_steward#readme"
 apps_screen = false
