@@ -33,7 +33,7 @@ Installing the app switches none of the tools on. Each one stays off until a Sys
 
 ## Features
 
-- **Bulk merge.** A **Merge Selected** action in every list view: tick two or more records, pick the one to keep, and the others are merged into it with Frappe's own rename-and-merge. System Manager only.
+- **Bulk merge.** A **Merge Selected** action in the list view of every DocType that allows renaming: tick two or more records, pick the one to keep, and the others are merged into it with Frappe's own rename-and-merge. System Manager only.
 - **Convert an Item to a variant.** **Actions → Convert to Variant** on the Item form: choose a template Item, pick a value for each of its attributes, and the Item becomes a variant of that template. Item Manager or System Manager.
 - **Payment Entry clearance date.** A **Set Clearance Date** button on the Payment Entry form sets or changes the date in a dialog. Accounts Manager or System Manager.
 - **Journal Entry clearance.** **Actions → Manually Clear** on the Journal Entry form sets the clearance date to the date of the Bank Transaction the entry is matched to; **Actions → Remove Clearance** clears it again. Accounts Manager or System Manager.
@@ -77,7 +77,7 @@ Open **Data Steward Settings** (search for it in the awesome bar) as a System Ma
 
 | Setting                  | Tool                                       | Who can use it                   |
 | ------------------------ | ------------------------------------------ | -------------------------------- |
-| Allow Bulk Merge         | Merge Selected, in every list view         | System Manager                   |
+| Allow Bulk Merge         | Merge Selected, in renamable list views    | System Manager                   |
 | Allow Convert to Variant | Item → Actions → Convert to Variant        | Item Manager, System Manager     |
 | Set Clearance Date       | Payment Entry → Set Clearance Date         | Accounts Manager, System Manager |
 | Manually Clear           | Journal Entry → Actions → Manually Clear   | Accounts Manager, System Manager |
@@ -90,7 +90,7 @@ Every tool also needs the user's write permission on the document (for a merge, 
 ## How It Works
 
 - The settings are a Single DocType, **Data Steward Settings**, with one check box per tool, all off by default. `data_steward.api.check_capability` tells the desk whether to show a tool's button; every endpoint starts with `assert_capability`, which raises a permission error when the tool is off, then checks the role and the document permission.
-- **Bulk merge** overrides the desk's `ListView` class to add the **Merge Selected** action, then calls Frappe's `bulk_rename` with the merge flag set for each record, so each one is renamed onto the record you keep and its links follow. Each merge is committed on its own, and Frappe's rename rules apply.
+- **Bulk merge** overrides the desk's `ListView` class to add the **Merge Selected** action to DocTypes with **Allow Rename** set (Frappe renames, and so merges, no others), then calls Frappe's `bulk_rename` with the merge flag set for each record, so each one is renamed onto the record you keep and its links follow. Each merge is committed on its own, and Frappe's rename rules apply. When it is done, the list refreshes and a **Merge Log** dialog shows Frappe's line for each record, merged or failed.
 - **Convert to Variant** writes `variant_of` on the Item directly (it is a set-once field, so a normal save would refuse it), replaces the Item's attributes with the template's, using the values you picked, and saves the Item. ERPNext's Item validation runs on that save, so a template without variants is refused ("is not a template item") and the request rolls back. When the template's stock UOM differs, the Item takes the template's stock UOM and keeps its old one as the sales UOM.
 - **The clearance tools** write `clearance_date` directly on the Payment Entry or Journal Entry, whether it is a draft, submitted or cancelled. **Manually Clear** looks for a Bank Transaction whose payments table links this Journal Entry and uses that transaction's date.
 - The endpoints accept POST only and do not commit themselves: the request commits on success and rolls back on an error.
@@ -98,8 +98,6 @@ Every tool also needs the user's write permission on the document (for a merge, 
 
 ## Limitations
 
-- **Merging needs Allow Rename.** Merge Selected is shown in every list view, but Frappe only renames DocTypes with **Allow Rename** set. In other DocTypes the merge fails with Frappe's "not allowed to be renamed" message.
-- **The merge log is not shown.** `bulk_rename` returns a line per record (merged or failed), but the list view only refreshes and does not show that log, so check the list after a merge of many records.
 - **The clearance buttons are shown on every entry.** Set Clearance Date appears on every Payment Entry, and Manually Clear and Remove Clearance on every Journal Entry, draft or cancelled included, when their tool is enabled. The server does not check the document's status either.
 - **Clearance changes bypass validation.** They are written straight to the database, so ERPNext does not re-check them against the bank account or the reconciliation.
 

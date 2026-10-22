@@ -9,6 +9,7 @@ is whitelisted, destructive, and untested."""
 from __future__ import annotations
 
 import json
+from unittest.mock import patch
 
 import frappe
 from frappe.tests.classes.context_managers import set_user
@@ -61,3 +62,20 @@ class TestBulkMerge(DataStewardIntegrationTestCase):
 
 		self.assertEqual(result, [f"Successful: {item.name} to _DS Test Bulk Perm New"])
 		self.assertTrue(frappe.db.exists("Item", "_DS Test Bulk Perm New"))
+
+	def test_refused_rows_come_back_as_failed_log_lines(self):
+		"""Merge Selected shows this log, so a row Frappe refuses must come back
+		as a "Failed" line, not vanish. ToDo has no Allow Rename, which is also
+		why the desk no longer offers Merge Selected there."""
+		keep = frappe.get_doc({"doctype": "ToDo", "description": "_DS Test merge keep"}).insert()
+		drop = frappe.get_doc({"doctype": "ToDo", "description": "_DS Test merge drop"}).insert()
+
+		# bulk_rename rolls back a failed row; keep this test's records.
+		with self.capability_enabled("global_bulk_merge"), patch.object(frappe.db, "rollback"):
+			result = bulk_merge("ToDo", json.dumps([[drop.name, keep.name, "true"]]))
+
+		self.assertFalse(frappe.get_meta("ToDo").allow_rename)
+		self.assertEqual(len(result), 1)
+		self.assertIn(f"Failed: {drop.name} to {keep.name}", result[0])
+		self.assertIn("not allowed to be renamed", result[0])
+		self.assertTrue(frappe.db.exists("ToDo", drop.name))
