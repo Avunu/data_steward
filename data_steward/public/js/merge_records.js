@@ -42,10 +42,11 @@ frappe.ui.merge_records = {
 							listview.clear_checked_items();
 							listview.refresh();
 							// bulk_rename returns one line per record, merged or failed
-							if (r.message.length) {
+							const log = /** @type {string[]} */ (r.message);
+							if (log.length) {
 								frappe.msgprint({
 									title: __("Merge Log"),
-									message: r.message.map((line) => frappe.utils.escape_html(line)).join("<br>"),
+									message: log.map((line) => frappe.utils.escape_html(line)).join("<br>"),
 								});
 							}
 						}
