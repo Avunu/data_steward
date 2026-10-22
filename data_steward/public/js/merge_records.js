@@ -70,7 +70,8 @@ if (BaseListView) {
 			}
 
 			add_merge_button() {
-				if (!this.merge_button_added) {
+				// Frappe only renames (and so merges) DocTypes with Allow Rename set
+				if (!this.merge_button_added && this.meta?.allow_rename) {
 					// Check if global bulk merge capability is enabled
 					data_steward.check_capability("global_bulk_merge").then((enabled) => {
 						if (enabled) {
