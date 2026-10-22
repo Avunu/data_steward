@@ -41,6 +41,14 @@ frappe.ui.merge_records = {
 						if (r.message) {
 							listview.clear_checked_items();
 							listview.refresh();
+							// bulk_rename returns one line per record, merged or failed
+							const log = /** @type {string[]} */ (r.message);
+							if (log.length) {
+								frappe.msgprint({
+									title: __("Merge Log"),
+									message: log.map((line) => frappe.utils.escape_html(line)).join("<br>"),
+								});
+							}
 						}
 					},
 				});
@@ -70,7 +78,8 @@ if (BaseListView) {
 			}
 
 			add_merge_button() {
-				if (!this.merge_button_added) {
+				// Frappe only renames (and so merges) DocTypes with Allow Rename set
+				if (!this.merge_button_added && this.meta?.allow_rename) {
 					// Check if global bulk merge capability is enabled
 					data_steward.check_capability("global_bulk_merge").then((enabled) => {
 						if (enabled) {
