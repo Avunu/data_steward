@@ -21,7 +21,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
-    uses: Avunu/frappe-nix/.github/workflows/app-lint.yml@bb8969c873a8b13d342f45cbeb1272cc55ce6799 # v1.0.0
+    uses: Avunu/frappe-nix/.github/workflows/app-lint.yml@028d07aabdffcf5329aea333176189e90ba35772 # v1.0.2
     with:
       app: data_steward
       integration-branch: develop
@@ -32,7 +32,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
-    uses: Avunu/frappe-nix/.github/workflows/app-typecheck.yml@bb8969c873a8b13d342f45cbeb1272cc55ce6799 # v1.0.0
+    uses: Avunu/frappe-nix/.github/workflows/app-typecheck.yml@028d07aabdffcf5329aea333176189e90ba35772 # v1.0.2
     with:
       app: data_steward
       integration-branch: develop
@@ -43,7 +43,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
-    uses: Avunu/frappe-nix/.github/workflows/app-test.yml@bb8969c873a8b13d342f45cbeb1272cc55ce6799 # v1.0.0
+    uses: Avunu/frappe-nix/.github/workflows/app-test.yml@028d07aabdffcf5329aea333176189e90ba35772 # v1.0.2
     with:
       app: data_steward
       integration-branch: develop
@@ -58,7 +58,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
-    uses: Avunu/frappe-nix/.github/workflows/app-marketplace.yml@bb8969c873a8b13d342f45cbeb1272cc55ce6799 # v1.0.0
+    uses: Avunu/frappe-nix/.github/workflows/app-marketplace.yml@028d07aabdffcf5329aea333176189e90ba35772 # v1.0.2
     with:
       app: data_steward
       integration-branch: develop

@@ -21,6 +21,6 @@ jobs:
   docs:
     permissions:
       contents: read # checkout
-    uses: Avunu/site-docs/.github/workflows/check-docs.yml@90aeb53d8ccadd8b1cbe81454ea4fd86dfcd5278 # 2026-10-16
+    uses: Avunu/site-docs/.github/workflows/check-docs.yml@d97e527ea958a836910676db317b53900d9de3c1 # 2026-10-16
     with:
       path: data-steward
