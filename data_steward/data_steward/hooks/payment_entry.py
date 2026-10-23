@@ -6,6 +6,7 @@ from frappe import _
 
 from data_steward.api import assert_capability
 from data_steward.data_steward.doctype.data_steward_settings.data_steward_settings import require_roles
+from data_steward.data_steward.hooks.clearance import validate_clearance_date
 
 
 @frappe.whitelist(methods=["POST"])
@@ -23,6 +24,8 @@ def set_clearance_date(payment_entry_name: str, clearance_date: str | None) -> s
 	# Bank clearance applies to submitted entries only
 	if payment_entry.docstatus != 1:
 		frappe.throw(_("Only a submitted Payment Entry can have a clearance date."))
+	# Same rule as ERPNext's Bank Clearance: not before the cheque/reference date
+	validate_clearance_date(clearance_date, payment_entry.get("reference_date"))
 	old_clearance_date = payment_entry.get("clearance_date")
 
 	frappe.db.set_value("Payment Entry", payment_entry_name, "clearance_date", clearance_date)

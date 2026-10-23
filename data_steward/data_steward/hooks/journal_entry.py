@@ -8,6 +8,7 @@ from frappe import _
 
 from data_steward.api import assert_capability
 from data_steward.data_steward.doctype.data_steward_settings.data_steward_settings import require_roles
+from data_steward.data_steward.hooks.clearance import validate_clearance_date
 
 if TYPE_CHECKING:
 	from erpnext.accounts.doctype.journal_entry.journal_entry import JournalEntry
@@ -55,6 +56,8 @@ def manually_clear_journal_entry(journal_entry_name: str) -> str:
 	)
 	if not bank_transaction_date:
 		return "No matching bank transaction found."
+	# Same rule as ERPNext's Bank Clearance: not before the cheque date
+	validate_clearance_date(bank_transaction_date, journal_entry.get("cheque_date"))
 
 	# set the clearance date on the journal entry; the request commits it
 	frappe.db.set_value("Journal Entry", journal_entry_name, "clearance_date", bank_transaction_date)

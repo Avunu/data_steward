@@ -35,8 +35,8 @@ Installing the app switches none of the tools on. Each one stays off until a Sys
 
 - **Bulk merge.** A **Merge Selected** action in the list view of every DocType that allows renaming: tick two or more records, pick the one to keep, and the others are merged into it with Frappe's own rename-and-merge. System Manager only.
 - **Convert an Item to a variant.** **Actions → Convert to Variant** on the Item form: choose a template Item, pick a value for each of its attributes, and the Item becomes a variant of that template. Item Manager or System Manager.
-- **Payment Entry clearance date.** A **Set Clearance Date** button on a submitted Payment Entry sets or changes the date in a dialog. Accounts Manager or System Manager.
-- **Journal Entry clearance.** **Actions → Manually Clear** on a submitted Journal Entry sets the clearance date to the date of the Bank Transaction the entry is matched to; **Actions → Remove Clearance** clears it again. Accounts Manager or System Manager.
+- **Payment Entry clearance date.** A **Set Clearance Date** button on a submitted Payment Entry sets or changes the date in a dialog. As in ERPNext's Bank Clearance tool, the date can't be before the entry's Cheque/Reference Date. Accounts Manager or System Manager.
+- **Journal Entry clearance.** **Actions → Manually Clear** on a submitted Journal Entry sets the clearance date to the date of the Bank Transaction the entry is matched to, and refuses it when that date is before the entry's Reference Date (cheque date); **Actions → Remove Clearance** clears it again. Accounts Manager or System Manager.
 - **An audit trail.** Every correction adds a comment to the document it changed: the old and new clearance date, the template an Item was converted to, or (Frappe's own) the records merged into the one kept. Data Steward Settings tracks its own changes too.
 - **Full-width desk.** The desk uses the full screen width, unless the user has already chosen a container width. This is the one part of the app that is not behind a setting, and it changes no data.
 
@@ -92,13 +92,13 @@ Every tool also needs the user's write permission on the document (for a merge, 
 - The settings are a Single DocType, **Data Steward Settings**, with one check box per tool, all off by default. `data_steward.api.check_capability` tells the desk whether to show a tool's button; every endpoint starts with `assert_capability`, which raises a permission error when the tool is off, then checks the role and the document permission.
 - **Bulk merge** overrides the desk's `ListView` class to add the **Merge Selected** action to DocTypes with **Allow Rename** set (Frappe renames, and so merges, no others), then calls Frappe's `bulk_rename` with the merge flag set for each record, so each one is renamed onto the record you keep and its links follow. Each merge is committed on its own, and Frappe's rename rules apply. When it is done, the list refreshes and a **Merge Log** dialog shows Frappe's line for each record, merged or failed.
 - **Convert to Variant** writes `variant_of` on the Item directly (it is a set-once field, so a normal save would refuse it), replaces the Item's attributes with the template's, using the values you picked, and saves the Item. ERPNext's Item validation runs on that save, so a template without variants is refused ("is not a template item") and the request rolls back. When the template's stock UOM differs, the Item takes the template's stock UOM and keeps its old one as the sales UOM.
-- **The clearance tools** write `clearance_date` directly on a submitted Payment Entry or Journal Entry. Their buttons are shown only on submitted entries, and the endpoints refuse a draft or cancelled one. **Manually Clear** looks for a Bank Transaction whose payments table links this Journal Entry and uses that transaction's date.
+- **The clearance tools** write `clearance_date` directly on a submitted Payment Entry or Journal Entry. Their buttons are shown only on submitted entries, and the endpoints refuse a draft or cancelled one. **Manually Clear** looks for a Bank Transaction whose payments table links this Journal Entry and uses that transaction's date. Before writing, both apply the rule from ERPNext's Bank Clearance tool: when the entry has a cheque date (`reference_date` on a Payment Entry, `cheque_date` on a Journal Entry), a clearance date before it is refused with "Clearance date … must be after cheque date …", and nothing is written. A clearance date on the cheque date itself is allowed, and the Set Clearance Date dialog's date picker starts at the cheque date.
 - The endpoints accept POST only and do not commit themselves: the request commits on success and rolls back on an error.
 - On install, `data_steward.install.after_install` copies the capability toggles from Jailbreak Settings when that DocType exists.
 
 ## Limitations
 
-- **Clearance changes bypass validation.** They are written straight to the database, so ERPNext does not re-check them against the bank account or the reconciliation.
+- **Clearance changes skip the document's own validation.** The date is checked the way ERPNext's Bank Clearance tool checks it (not before the cheque date), but it is then written straight to the database, so ERPNext does not re-check it against the bank account or the Bank Reconciliation.
 
 <!-- frappe-nix:begin support -->
 

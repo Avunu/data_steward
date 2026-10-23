@@ -23,6 +23,11 @@ frappe.ui.form.on("Payment Entry", {
 								label: __("Clearance Date"),
 								reqd: 1,
 								default: frm.doc.clearance_date,
+								// The server refuses a date before the cheque date, as
+								// ERPNext's Bank Clearance tool does
+								min_date: frm.doc.reference_date
+									? frappe.datetime.str_to_obj(frm.doc.reference_date)
+									: undefined,
 							},
 						],
 						function (values) {

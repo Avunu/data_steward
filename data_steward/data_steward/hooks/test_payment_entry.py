@@ -123,3 +123,45 @@ class TestSetClearanceDateDocstatus(DataStewardIntegrationTestCase):
 			set_clearance_date(pe.name, "2021-06-15")
 
 		self.assertIsNone(frappe.db.get_value("Payment Entry", pe.name, "clearance_date"))
+
+
+class TestSetClearanceDateChequeDate(DataStewardIntegrationTestCase):
+	"""ERPNext's Bank Clearance refuses a clearance date before the cheque
+	date; Set Clearance Date applies the same rule to `reference_date`."""
+
+	def test_before_reference_date_is_refused(self):
+		pe = make_payment_entry(reference_no="_DS-CHEQUE-PE-1", reference_date="2021-06-15")
+
+		with (
+			self.capability_enabled("payment_entry_set_clearance_date"),
+			self.assertRaisesRegex(frappe.ValidationError, "must be after cheque date"),
+		):
+			set_clearance_date(pe.name, "2021-06-14")
+
+		self.assertIsNone(frappe.db.get_value("Payment Entry", pe.name, "clearance_date"))
+		self.assertFalse(
+			frappe.db.exists(
+				"Comment",
+				{"reference_doctype": "Payment Entry", "reference_name": pe.name, "comment_type": "Edit"},
+			)
+		)
+
+	def test_on_reference_date_is_allowed(self):
+		pe = make_payment_entry(reference_no="_DS-CHEQUE-PE-2", reference_date="2021-06-15")
+
+		with self.capability_enabled("payment_entry_set_clearance_date"):
+			set_clearance_date(pe.name, "2021-06-15")
+
+		self.assertEqual(str(frappe.db.get_value("Payment Entry", pe.name, "clearance_date")), "2021-06-15")
+
+	def test_changing_an_existing_date_to_before_reference_date_is_refused(self):
+		pe = make_payment_entry(reference_no="_DS-CHEQUE-PE-3", reference_date="2021-06-15")
+		frappe.db.set_value("Payment Entry", pe.name, "clearance_date", "2021-06-20")
+
+		with (
+			self.capability_enabled("payment_entry_set_clearance_date"),
+			self.assertRaises(frappe.ValidationError),
+		):
+			set_clearance_date(pe.name, "2021-06-01")
+
+		self.assertEqual(str(frappe.db.get_value("Payment Entry", pe.name, "clearance_date")), "2021-06-20")

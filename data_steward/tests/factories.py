@@ -193,11 +193,13 @@ def make_journal_entry(*, amount: float = 25, submit: bool = True, **fields: Any
 	)
 
 
-def make_cleared_journal_entry(*, clearance_date: str = "2020-02-02", amount: float = 25) -> Any:
+def make_cleared_journal_entry(
+	*, clearance_date: str = "2020-02-02", amount: float = 25, **fields: Any
+) -> Any:
 	"""A Journal Entry with a matching Bank Transaction that references it
 	through its `payment_entries` child table, the shape
-	`manually_clear_journal_entry` looks for."""
-	je = make_journal_entry(amount=amount)
+	`manually_clear_journal_entry` looks for. `fields` go to the Journal Entry."""
+	je = make_journal_entry(amount=amount, **fields)
 	make_bank_transaction(
 		date=clearance_date,
 		deposit=amount,
@@ -228,7 +230,9 @@ def make_payment_entry(*, reference_no: str = "_DS-PROBE-1", submit: bool = True
 				"paid_amount": amount,
 				"received_amount": amount,
 				"reference_no": reference_no,
-				"reference_date": fields.pop("reference_date", nowdate()),
+				# A fixed, early cheque date, so the clearance dates tests set are
+				# not refused as earlier than it (see `hooks.clearance`)
+				"reference_date": fields.pop("reference_date", "2021-01-01"),
 				**fields,
 			}
 		),
