@@ -222,3 +222,38 @@ class TestJournalEntryClearanceDocstatus(DataStewardIntegrationTestCase):
 			remove_clearance_date_journal_entry(je.name)
 
 		self.assertEqual(str(frappe.db.get_value("Journal Entry", je.name, "clearance_date")), "2020-02-02")
+
+
+class TestManuallyClearChequeDate(DataStewardIntegrationTestCase):
+	"""ERPNext's Bank Clearance refuses a clearance date before the cheque
+	date; Manually Clear applies the same rule to the Bank Transaction date."""
+
+	def test_bank_transaction_before_cheque_date_is_refused(self):
+		je = make_cleared_journal_entry(
+			clearance_date="2020-02-02", cheque_no="_DS-CHEQUE-JE-1", cheque_date="2020-02-03"
+		)
+
+		with (
+			self.capability_enabled("journal_entry_manually_clear"),
+			self.assertRaisesRegex(frappe.ValidationError, "must be after cheque date"),
+		):
+			manually_clear_journal_entry(je.name)
+
+		self.assertIsNone(frappe.db.get_value("Journal Entry", je.name, "clearance_date"))
+		self.assertFalse(
+			frappe.db.exists(
+				"Comment",
+				{"reference_doctype": "Journal Entry", "reference_name": je.name, "comment_type": "Edit"},
+			)
+		)
+
+	def test_bank_transaction_on_cheque_date_clears(self):
+		je = make_cleared_journal_entry(
+			clearance_date="2020-02-02", cheque_no="_DS-CHEQUE-JE-2", cheque_date="2020-02-02"
+		)
+
+		with self.capability_enabled("journal_entry_manually_clear"):
+			result = manually_clear_journal_entry(je.name)
+
+		self.assertEqual(result, f"Journal Entry {je.name} cleared to 2020-02-02.")
+		self.assertEqual(str(frappe.db.get_value("Journal Entry", je.name, "clearance_date")), "2020-02-02")
