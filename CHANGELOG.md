@@ -1,5 +1,14 @@
 # Changelog
 
+## [16.0.1](https://github.com/Avunu/data_steward/compare/v16.0.0...v16.0.1) (2026-10-24)
+
+
+### Bug Fixes
+
+* **clearance:** only change clearance dates on submitted entries ([#36](https://github.com/Avunu/data_steward/issues/36)) ([64db075](https://github.com/Avunu/data_steward/commit/64db075447ca27f8d5ea1c2f2eb1c296d129cfd8))
+* **clearance:** refuse a clearance date before the cheque date ([#41](https://github.com/Avunu/data_steward/issues/41)) ([cecdbe8](https://github.com/Avunu/data_steward/commit/cecdbe820753f8d21da9b89c90cc15b30718ebcc))
+* **merge:** only offer Merge Selected where it can merge, and show its log ([#35](https://github.com/Avunu/data_steward/issues/35)) ([7120010](https://github.com/Avunu/data_steward/commit/712001002f7ec9e7680e3f11ab035ea934ee480f))
+
 ## [16.0.0](https://github.com/Avunu/data_steward/compare/v0.0.1...v16.0.0) (2026-10-20)
 
 
