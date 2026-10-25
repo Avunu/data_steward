@@ -58,10 +58,6 @@ Installing the app switches none of the tools on. Each one stays off until a Sys
 
 ## Installation
 
-On Frappe Cloud, install Data Steward from the [Frappe marketplace](https://cloud.frappe.io/marketplace/apps/data_steward).
-
-On a bench of your own:
-
 ```bash
 bench get-app https://github.com/Avunu/data_steward --branch version-16
 bench --site <site> install-app data_steward
