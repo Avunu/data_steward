@@ -39,7 +39,7 @@ The Administrator user passes every role check. The buttons are shown to anyone 
 
 ## Full-width desk
 
-The desk bundle sets Frappe's full-width layout on in a browser that has no layout stored yet, then leaves it alone. The choice is kept in the browser's local storage, the same place Frappe's own **Full Width** and **Compact** layout setting keeps it, so it applies per browser rather than per user. A user who switches back to **Compact** keeps that choice. There is no setting to turn this default off.
+The desk bundle sets Frappe's full-width layout on in a browser that has no layout stored yet, then leaves it alone. The choice is kept in the browser's local storage, the same place Frappe's own layout setting keeps it (**Settings** in the user menu, then **Appearance**, **Layout**: **Compact** or **Full Width**), so it applies per browser rather than per user. A user who switches back to **Compact** keeps that choice. There is no setting to turn this default off.
 
 ## What the app adds to your site
 

@@ -27,7 +27,7 @@ Merge duplicate records, convert Items to variants and fix bank clearance dates
 
 ## Overview
 
-Frappe and ERPNext make some corrections hard on purpose: a duplicate Customer can't simply be folded into another, an Item can't become a variant once it exists, and a clearance date that bank reconciliation got wrong can't be changed on a submitted entry. Sometimes an administrator cleaning up real data does need to make those changes. Data Steward adds a small set of tools for them.
+Frappe and ERPNext make some corrections hard on purpose: a duplicate Customer can't be folded into another from its form, an Item can't become a variant once it exists, and a clearance date that bank reconciliation got wrong can't be changed on a submitted entry. Sometimes an administrator cleaning up real data does need to make those changes. Data Steward adds a small set of tools for them.
 
 Installing the app switches none of the tools on. Each one stays off until a System Manager enables it in **Data Steward Settings**, the server checks that setting again on every call, each tool also needs a role and the user's write permission on the document, and every change leaves a comment on the document it touched. It is meant for experienced administrators; try a correction on a copy of the site first.
 

@@ -15,7 +15,7 @@ updated: 2026-10-26
 - **A merge cannot be undone.** The merged records are deleted, and their own field values and child table rows are not copied to the record you keep. At most 500 records can be merged in one run, and a submitted document cannot be merged.
 - **Convert to Variant copies only the attributes and the stock unit.** Nothing else comes from the template, and ERPNext's check for another variant with the same attribute values does not run on a converted Item. A template based on Manufacturer, or one with a numeric attribute, cannot be used.
 - **Buttons do not check roles.** While a tool is enabled, its button is shown to everyone who can open the form or list; the server refuses the call from a user without the role.
-- **The full-width default has no setting.** It applies in every browser that has no layout stored yet. Each user can switch back to **Compact** in Frappe's layout setting.
+- **The full-width default has no setting.** It applies in every browser that has no layout stored yet. Each user can switch back to **Compact** under **Settings → Appearance → Layout**.
 
 ## Troubleshooting
 
@@ -44,7 +44,7 @@ Fix: give the user one of those roles, or have someone who has one make the chan
 
 ### A permission error naming the document
 
-You have the role, but not write permission on this document. For a merge, the failure is a line in the **Merge Log** instead, such as "You need write permission on Customer `<NAME>` to merge", and a merge also needs delete permission on each record being merged.
+You have the role, but not write permission on this document. For a merge, the failure is a line in the **Merge Log** instead: "You need write permission on Customer `<NAME>` to rename" for a record being merged, or "You need write permission on Customer `<NAME>` to merge" for the record you keep. A merge also needs delete permission on each record being merged.
 
 Fix: give the user's role write (and for merging, delete) permission on the DocType in the Role Permission Manager, or check the user permissions that restrict this record.
 
@@ -74,9 +74,15 @@ Fix: tick the duplicates and the record to keep, then try again.
 
 ### A "** Failed" line in the Merge Log
 
-The line ends with the error Frappe raised for that record, and that record was left as it was. Common causes: missing write or delete permission, a submitted document (Frappe cannot delete it), or a rule of the DocType itself that refuses the rename. "Maximum 500 rows allowed" means you tried to merge more than 500 records at once.
+The line ends with the error Frappe raised for that record, and that record was left as it was. Common causes: missing write or delete permission, a submitted document (Frappe cannot delete it), or a rule of the DocType itself that refuses the rename.
 
 Fix: correct the cause named in the line and merge that record again.
+
+### "Maximum 500 rows allowed"
+
+You tried to merge more than 500 records into one in a single run. Frappe's bulk rename refuses the whole request, so nothing was merged and no **Merge Log** is shown.
+
+Fix: tick fewer records and merge them in several runs.
 
 ### "This template has no attributes."
 
@@ -96,4 +102,4 @@ Fix: correct the template or the Item as the message says, then convert again.
 
 ### The desk went full width
 
-That is the app's [full-width default](configuration.md#full-width-desk). Switch to **Compact** in Frappe's layout setting; the app does not change it again in that browser.
+That is the app's [full-width default](configuration.md#full-width-desk). Open **Settings** from the user menu, go to **Appearance** and choose **Compact** under **Layout**; the app does not change it again in that browser.

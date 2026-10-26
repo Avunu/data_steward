@@ -44,7 +44,7 @@ Each record is merged and committed on its own. If one fails, for example becaus
 
 ## Limits
 
-- Frappe's bulk rename takes at most 500 records per call, so you can merge at most 500 records into one in a single run.
+- Frappe's bulk rename takes at most 500 records per call, so you can merge at most 500 records into one in a single run. A larger run is refused with "Maximum 500 rows allowed" and nothing is merged.
 - A submitted document cannot be merged, because Frappe refuses to delete it.
 
 ## Related

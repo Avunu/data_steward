@@ -31,10 +31,12 @@ When it succeeds, an alert says "Item converted to variant successfully" and the
 
 - **Variant Of** is set to the template.
 - **Variant Attributes** are replaced: the Item's old rows are removed, and it gets one row per attribute of the template, with the value you picked.
-- When the template's **Default Unit of Measure** differs from the Item's, the Item takes the template's, and its old unit becomes its **Default Sales Unit of Measure**.
+- When the template's **Default Unit of Measure** differs from the Item's, the Item takes the template's, and its old unit becomes its **Default Sales Unit of Measure**. ERPNext then empties the Item's **UOM Conversion Details** table on the **UOM** tab and adds the new unit with a factor of 1, so enter the other units' conversion factors again.
 - A comment "Converted to a variant of `<TEMPLATE>`" is added to the Item.
 
 Nothing else is copied from the template: the Item keeps its code, name, description, group, prices and every other field. The Item is saved with ERPNext's normal Item validation, so anything ERPNext refuses on that save (see [Troubleshooting](troubleshooting.md#troubleshooting)) stops the whole conversion and nothing is changed.
+
+From now on the Item is a variant like any other. When the template is saved, ERPNext copies the template's required fields, such as **Item Group**, and the fields listed under **Copy Fields to Variant** in **Item Variant Settings** to all its variants, this Item included, unless **Do not update variants on save** is ticked there.
 
 > [!NOTE]
 > ERPNext checks that no other variant of the template has the same attribute values only when a variant is created. A converted Item is not new, so that check does not run: make sure the template has no variant with the same values already.

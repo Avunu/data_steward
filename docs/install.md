@@ -62,7 +62,7 @@ bench --site <SITE_NAME> uninstall-app data_steward
 
 Frappe takes a backup first (unless you pass `--no-backup`), then deletes the Data Steward module and the **Data Steward Settings** DocType with its values.
 
-What the tools did stays: merged records stay merged, converted Items stay variants, clearance dates keep the value they were given, and the comments on those documents remain. The full-width setting stays in each browser that has it; switch it back in Frappe's own layout setting.
+What the tools did stays: merged records stay merged, converted Items stay variants, clearance dates keep the value they were given, and the comments on those documents remain. The full-width setting stays in each browser that has it; switch it back under **Settings → Appearance → Layout**.
 
 ## Next
 
