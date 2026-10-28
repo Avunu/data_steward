@@ -15,6 +15,7 @@ Merge duplicate records, convert Items to variants and fix bank clearance dates
 [![Latest release](https://img.shields.io/github/v/release/Avunu/data_steward)](https://github.com/Avunu/data_steward/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](license.txt)
 [![Frappe v16](https://img.shields.io/badge/Frappe-v16-blue)](https://github.com/frappe/frappe/tree/version-16)
+[![Documentation](https://img.shields.io/badge/docs-docs.avunu.net-blue)](https://docs.avunu.net/data-steward/)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/merge-records-dark.webp">
@@ -107,6 +108,7 @@ The full list, and the messages the tools show, are in [docs/troubleshooting.md]
 
 ## Support
 
+- Documentation: [docs.avunu.net/data-steward/](https://docs.avunu.net/data-steward/)
 - Bug reports and questions: [GitHub issues](https://github.com/Avunu/data_steward/issues)
 - E-mail: <mail@avu.nu>
 
