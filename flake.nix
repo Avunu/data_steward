@@ -4,7 +4,7 @@
   description = "data_steward: Data Steward";
 
   inputs = {
-    frappe-nix.url = "github:Avunu/frappe-nix/release-1";
+    frappe-nix.url = "github:Avunu/frappe-nix/release-2";
     nixpkgs.follows = "frappe-nix/nixpkgs";
     frappe = {
       url = "github:frappe/frappe/version-16";
