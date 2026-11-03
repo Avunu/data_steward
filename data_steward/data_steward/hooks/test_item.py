@@ -63,12 +63,12 @@ class TestConvertToVariant(DataStewardIntegrationTestCase):
 		template = make_item_template()
 
 		with self.capability_enabled("item_convert_to_variant"):
-			self.assertTrue(convert_to_variant(item.name, template.name, json.dumps({"Colour": "Red"})))
+			self.assertTrue(convert_to_variant(item.name, template.name, json.dumps({"Colour": "Blue"})))
 
 		converted: Item = cast("Item", frappe.get_doc("Item", item.name))
 		self.assertEqual(converted.variant_of, template.name)
 		self.assertEqual(
-			[(a.attribute, a.attribute_value) for a in converted.attributes], [("Colour", "Red")]
+			[(a.attribute, a.attribute_value) for a in converted.attributes], [("Colour", "Blue")]
 		)
 
 	def test_missing_attribute_value_is_skipped_not_errored(self):
@@ -172,7 +172,7 @@ class TestConvertToVariantPermissions(DataStewardIntegrationTestCase):
 		template = make_item_template()
 
 		with self.capability_enabled("item_convert_to_variant"), set_user(user.name):
-			self.assertTrue(convert_to_variant(item.name, template.name, {"Colour": "Red"}))
+			self.assertTrue(convert_to_variant(item.name, template.name, {"Colour": "Green"}))
 
 		self.assertEqual(frappe.db.get_value("Item", item.name, "variant_of"), template.name)
 		self.assertTrue(_variant_comment_exists(item.name))
