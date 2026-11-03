@@ -18,6 +18,11 @@ doctype_js = {
 	"Journal Entry": "public/js/journal_entry.js",
 }
 
+# The desk side panel's preview, plus which fields the user may change there (side_panel.py).
+override_whitelisted_methods = {
+	"frappe.desk.doc_preview.get_preview": "data_steward.side_panel.get_preview",
+}
+
 export_python_type_annotations = True
 
 # Copies the capability toggles from Jailbreak Settings, when the old jailbreak app is still installed.

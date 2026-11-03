@@ -3,7 +3,7 @@ title: Develop Data Steward
 description: The dev shell, the commands and tests, CI and the release flow of the Data Steward repository, and how to add a tool.
 nav_title: Development
 order: 9
-updated: 2026-10-26
+updated: 2026-11-02
 ---
 
 This page is for people changing the app. [How it works](architecture.md) explains the code behind each tool. The managed files, the shared checks and the release flow are described once for every Avunu app in the [app standards documentation](https://docs.avunu.net/frappe-nix/docs/app-standards/); this page covers what is specific to this repository.
@@ -37,6 +37,7 @@ Run these inside the dev shell, from the repository root.
 data_steward/
   hooks.py                       app hooks: the desk bundle, form scripts, after_install
   api.py                         whitelisted check_capability and assert_capability for the desk
+  side_panel.py                  the side panel's preview with write_permlevels, and its save
   install.py                     after_install: copies the toggles from Jailbreak Settings
   demo.py                        demo data for frappe-demo and the screenshots
   data_steward/
@@ -48,7 +49,7 @@ data_steward/
       journal_entry.py           manually_clear_journal_entry, remove_clearance_date_journal_entry
       clearance.py               the cheque-date check both clearance tools share
   public/js/
-    data_steward.bundle.js       the desk bundle: data_steward.js, merge_records.js, full_width.js
+    data_steward.bundle.js       the desk bundle: data_steward.js, merge_records.js, full_width.js, side_panel.js
     item.js, payment_entry.js, journal_entry.js   the form scripts
   tests/                         the shared test case, factories, install and demo tests
 types/                           DocType types and the app's desk globals, for yarn typecheck

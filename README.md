@@ -41,7 +41,10 @@ Full documentation: [docs.avunu.net/data-steward/docs/](https://docs.avunu.net/d
 - **Payment Entry clearance date.** A **Set Clearance Date** button on a submitted Payment Entry sets or changes the date in a dialog. As in ERPNext's Bank Clearance tool, the date can't be before the entry's Cheque/Reference Date. Accounts Manager or System Manager.
 - **Journal Entry clearance.** **Actions → Manually Clear** on a submitted Journal Entry sets the clearance date to the date of the Bank Transaction the entry is matched to, and refuses it when that date is before the entry's Reference Date (cheque date); **Actions → Remove Clearance** clears it again. Accounts Manager or System Manager. See [docs/clearance-dates.md](docs/clearance-dates.md).
 - **An audit trail.** Every correction adds a comment to the document it changed: the old and new clearance date, the template an Item was converted to, or (Frappe's own) the records merged into the one kept. Data Steward Settings tracks its own changes too.
-- **Full-width desk.** The desk uses the full screen width in a browser that has no layout stored yet; Frappe keeps that choice per browser, not per user. This is the one part of the app that is not behind a setting, and it changes no data.
+- **Editable side panel.** The document Frappe's side panel shows when you click a Link cell in a report can be changed and saved in the panel, under the field rules of its form and the user's own permissions on it. Unsaved changes are never dropped silently, and **Open in full page** carries them into the form. Child tables stay read-only, and form scripts do not run there. See [docs/side-panel.md](docs/side-panel.md).
+- **Full-width desk.** The desk uses the full screen width in a browser that has no layout stored yet; Frappe keeps that choice per browser, not per user. It changes no data.
+
+The side panel and the full-width default are the two parts of the app that are not behind a setting. Neither lets a user do anything their permissions would not let them do in the form.
 
 <!-- frappe-nix:begin compatibility -->
 
@@ -92,7 +95,8 @@ Every tool also needs one of its roles and write permission on the document; a m
 - **Bulk merge** extends the desk's `ListView` class to add **Merge Selected**, and calls Frappe's `bulk_rename` with the merge flag, so each record is merged, committed and logged on its own.
 - **Convert to Variant** writes the set-once `variant_of` field directly, replaces the Item's attributes with the template's, takes the template's stock UOM when it differs, and saves the Item through ERPNext's validation.
 - **The clearance tools** check the date against the cheque date, as ERPNext's Bank Clearance tool does, and write `clearance_date` directly on the submitted entry.
-- The endpoints accept POST only and do not commit themselves: the request commits on success and rolls back on an error.
+- **The side panel** is Frappe's own, patched as its lazy bundle defines it: the controls take the form's field rules instead of being forced read-only, and Save posts only the changed fields with the copy's `modified` to `data_steward.side_panel.save`, so a stale copy is refused. `data_steward.side_panel.get_preview` replaces Frappe's preview to add the permission levels the user may change.
+- The endpoints that change data accept POST only and do not commit themselves: the request commits on success and rolls back on an error.
 
 The details are in [docs/development/architecture.md](docs/development/architecture.md).
 
@@ -100,6 +104,7 @@ The details are in [docs/development/architecture.md](docs/development/architect
 
 - **Clearance changes skip the document's own validation.** The date is checked the way ERPNext's Bank Clearance tool checks it (not before the cheque date), but it is then written straight to the database, so ERPNext does not re-check it against the bank account or the Bank Reconciliation.
 - **A merge cannot be undone**, and the merged records' own field values are not copied to the record kept.
+- **The side panel runs no form scripts.** Their link filters, fetches and recalculations do not happen there, and child tables are read-only; the server's validation checks each change.
 - **Convert to Variant copies only the attributes and the stock unit**, and ERPNext's check for an existing variant with the same attribute values does not run on a converted Item.
 
 The full list, and the messages the tools show, are in [docs/troubleshooting.md](docs/troubleshooting.md).
