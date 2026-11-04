@@ -3,7 +3,7 @@ title: Limitations and troubleshooting
 description: What Data Steward's tools do not do, and the messages they show, with the cause and the fix for each.
 nav_title: Troubleshooting
 order: 8
-updated: 2026-10-26
+updated: 2026-11-02
 ---
 
 ## Limitations
@@ -15,6 +15,8 @@ updated: 2026-10-26
 - **A merge cannot be undone.** The merged records are deleted, and their own field values and child table rows are not copied to the record you keep. At most 500 records can be merged in one run, and a submitted document cannot be merged.
 - **Convert to Variant copies only the attributes and the stock unit.** Nothing else comes from the template, and ERPNext's check for another variant with the same attribute values does not run on a converted Item. A template based on Manufacturer, or one with a numeric attribute, cannot be used.
 - **Buttons do not check roles.** While a tool is enabled, its button is shown to everyone who can open the form or list; the server refuses the call from a user without the role.
+- **The side panel runs no form scripts.** Link filters, fetched values and recalculations that a DocType's form script adds do not happen in the panel; the server's validation is what checks a change. Child tables are read-only there. See [Edit in the side panel](side-panel.md#limits).
+- **The editable side panel has no setting.** Who may change what is decided by the user's permissions on the document, as in its form.
 - **The full-width default has no setting.** It applies in every browser that has no layout stored yet. Each user can switch back to **Compact** under **Settings → Appearance → Layout**.
 
 ## Troubleshooting
@@ -99,6 +101,14 @@ The Item is saved with ERPNext's Item validation, and whatever it refuses rolls 
 - "Attribute `<ATTRIBUTE>` is disabled.": the attribute is disabled on the template's **Variant Attributes**.
 
 Fix: correct the template or the Item as the message says, then convert again.
+
+### "has been modified after you have opened it" when saving in the side panel
+
+Someone saved the document after the panel loaded it. Your changes are still in the panel. Close it, choose **Discard**, and open the document again to start from the saved version, or note your changes first.
+
+### "… cannot be changed from the side panel."
+
+The save named a child table or a field the document does not have. The panel never sends those; the message comes from a script calling `data_steward.side_panel.save` directly. Change child tables in the form.
 
 ### The desk went full width
 

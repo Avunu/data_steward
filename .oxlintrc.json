@@ -60,7 +60,8 @@
 				"data_steward/public/js/item.js",
 				"data_steward/public/js/journal_entry.js",
 				"data_steward/public/js/merge_records.js",
-				"data_steward/public/js/payment_entry.js"
+				"data_steward/public/js/payment_entry.js",
+				"data_steward/public/js/side_panel.js"
 			],
 			"globals": {
 				"frappe": "readonly",

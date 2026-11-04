@@ -3,10 +3,10 @@ title: How it works
 description: How Data Steward gates each tool, and what each endpoint does on the server, from the capability check to the comment it leaves.
 nav_title: How it works
 order: 10
-updated: 2026-10-26
+updated: 2026-11-02
 ---
 
-Data Steward is one module, Data Steward, with one DocType, a desk bundle, three form scripts and five endpoints. It has no `doc_events`, no scheduled jobs, no server-side class overrides and no patches. Everything it changes, it changes when a user clicks a button.
+Data Steward is one module, Data Steward, with one DocType, a desk bundle, three form scripts and seven endpoints, one of which replaces Frappe's side panel preview. It has no `doc_events`, no scheduled jobs, no server-side class overrides and no patches. Everything it changes, it changes when a user clicks a button.
 
 ## The capability gate
 
@@ -56,6 +56,22 @@ The endpoints never call `frappe.db.commit`. A POST request is committed by Frap
 ## Install
 
 `after_install` (`data_steward.install.after_install`) calls `copy_jailbreak_settings`. When the DocType **Jailbreak Settings** exists, it reads its values with `frappe.db.get_singles_dict`, without loading the other app's controller, and copies the five fields listed in `CAPABILITY_FIELDS` to Data Steward Settings. On any other site it does nothing.
+
+## Side panel
+
+Frappe's side panel (`frappe/public/js/frappe/ui/side_panel.js`, Frappe 16.50+) previews a document in a frm-less `frappe.ui.form.Layout`, the construction every Dialog uses, and forces each control's `get_status` to `"Read"`. `public/js/side_panel.js` turns that into an editing surface without forking the panel.
+
+**Patching a lazy class.** The panel lives in `side_panel.bundle.js`, which Frappe loads on the first Link cell click. The desk bundle defines `frappe.ui.SidePanel` as an accessor property whose setter patches the class's prototype the moment that bundle assigns it, before the singleton is built, then turns the property back into a plain value. The patch wraps `make_buttons`, `open`, `back` and `close`, and replaces `render_doc`. A renderer that wraps the panel further, such as a doctype-specific view, keeps working: the guards only act on an editor that is on screen.
+
+**Editing.** `render_doc` builds one `Layout` per doctype, as core does, and points it at a `structuredClone` of the preview's document, so the cached preview stays as loaded for Back and a revisit. Each control's `get_status` calls `frappe.perm.get_field_display_status`, the form's own rule (permlevel, docstatus, allow on submit, read only, set only once), with a permission array built from the preview: `permlevels` (readable) from Frappe, `write_permlevels` from Data Steward, emptied when the workflow state's `allow_edit` roles exclude the user (`frappe.workflow.is_read_only` reads `locals`, which the copy is not in). Tables and Buttons stay `"Read"`; empty read-only fields and a named document's `naming_series` are hidden, as on the form. Frm-less, a `Layout` skips `mandatory_depends_on` and `read_only_depends_on`, Link has no target for its fetched values, and Dynamic Link looks for its doctype in `locals`; the editor gives the layout a `set_dependant_property` and a `set_value`, and the Dynamic Link a `get_options`, that read the copy.
+
+**Dirty state.** Each control's `set_model_value` is wrapped to note the fieldname and refresh dependencies. `get_changes()` compares those fields with the loaded document (a cleared field matches a null one, numbers compare as numbers), so a Select that corrects its own value while it renders does not count as a change unless the value really differs.
+
+**Saving.** `save()` blurs the focused input, waits as `frappe.app.trigger_primary_action` does and then for the Link checks that blur started, and posts the changed fields with the copy's `modified` to `data_steward.side_panel.save`. That endpoint refuses any key that is not a plain meta field (standard fields such as `docstatus` are not meta fields; tables and layout fields are `no_value_fields`), updates the document, sets `modified` to the copy's so `check_if_latest` refuses a stale copy as it does for the form, and saves it. It returns the new preview, which replaces the cached one.
+
+**Permissions.** `data_steward.side_panel.get_preview` replaces `frappe.desk.doc_preview.get_preview` through `override_whitelisted_methods`. It calls Frappe's function and adds `write_permlevels`: none on a cancelled document or without write permission (`Document.has_permission`, so shares, user permissions and `has_permission` hooks count), none on a submitted one without submit permission (an update after submit checks it), otherwise `get_permlevel_access("write")`, the levels `validate_higher_perm_levels` lets a save change.
+
+**Unsaved changes.** `open` (another document), `back` and `close` ask `frappe.warn` before they drop changes. Core calls `close()` on every route change and just before "Open in full page" routes, so `close()` tells them apart: when the route has already changed, it hands the changes to the document's form if that is where the route went (a one-time `form-refresh` handler that `frm.set_value`s them when `modified` still matches) and otherwise shows a toast; when it has not, it waits a tick and asks only if the URL has not moved. A `beforeunload` listener asks before a reload, except in developer mode, like the form's.
 
 ## Full width
 
