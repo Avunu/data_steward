@@ -1,6 +1,6 @@
 {
 	"name": "data_steward",
-	"version": "16.0.1",
+	"version": "16.1.0",
 	"private": true,
 	"description": "Merge duplicate records, convert Items to variants and fix bank clearance dates",
 	"license": "MIT",
