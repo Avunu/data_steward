@@ -1,5 +1,12 @@
 # Changelog
 
+## [16.1.0](https://github.com/Avunu/data_steward/compare/v16.0.1...v16.1.0) (2026-11-04)
+
+
+### Features
+
+* allow editing documents in the new frappe side panel ([#69](https://github.com/Avunu/data_steward/issues/69)) ([4f88c41](https://github.com/Avunu/data_steward/commit/4f88c415dac6b17b90f8af4a04f150de9feaaa62))
+
 ## [16.0.1](https://github.com/Avunu/data_steward/compare/v16.0.0...v16.0.1) (2026-11-03)
 
 
