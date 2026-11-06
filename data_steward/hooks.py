@@ -8,6 +8,18 @@ app_description = "Merge duplicate records, convert Items to variants and fix ba
 app_email = "mail@avu.nu"
 app_license = "MIT"
 
+# Frappe's About dialog takes the logo from here. not_listed keeps the app off the apps screen.
+# app_logo_url would change the site's own logo.
+add_to_apps_screen = [
+	{
+		"name": "data_steward",
+		"logo": "/assets/data_steward/images/data_steward-logo.svg",
+		"title": "Data Steward",
+		"route": "/desk",
+		"has_permission": "data_steward.apps_screen.not_listed",
+	}
+]
+
 required_apps = ["erpnext"]
 
 app_include_js = "data_steward.bundle.js"
