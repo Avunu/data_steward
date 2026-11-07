@@ -30,7 +30,7 @@ frappe.ui.file_merge = {
 				`<p>${escape(__("Merge {0} file(s) into {1}?", [String(files.length), keep_label]))}</p>`,
 				`<p>${escape(
 					__(
-						"Every Attach field, text and link that refers to a merged file will refer to the kept file instead. A merged file that is attached to a document stays on it as an attachment of the kept file; every other merged file is deleted, and its content is removed once no file uses it.",
+						"Every Attach field, text and link that refers to a merged file will refer to the kept file instead. Documents a merged file is attached to keep the attachment, which now shows the kept file. Merged files are deleted once nothing needs them, and their content is removed once no file uses it.",
 					),
 				)}</p>`,
 				`<p><strong>${escape(__("This cannot be undone."))}</strong></p>`,
