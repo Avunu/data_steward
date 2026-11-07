@@ -40,7 +40,9 @@ declare global {
 		): Promise<DataStewardFileMergeResult[] | null>;
 		/** Shows one line per merged or failed file. */
 		show_log(keep_label: string, results: DataStewardFileMergeResult[]): void;
-		/** Adds Merge Files to the File list's Actions menu, once per view, when the tool is on. */
+		/** Whether the user has the role the server requires: System Manager, or Administrator. */
+		may_merge(): boolean;
+		/** Adds Merge Files to the File list's Actions menu, once per view, for a System Manager when the tool is on. */
 		add_list_action(listview: frappe.views.ListView): void;
 		/** The dialog behind the list's Merge Files. */
 		merge_checked_files(listview: frappe.views.ListView): void;
