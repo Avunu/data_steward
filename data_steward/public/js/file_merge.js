@@ -85,6 +85,14 @@ frappe.ui.file_merge = {
 	},
 
 	/**
+	 * Whether this user has the role the server requires (Administrator passes every role check).
+	 * @returns {boolean}
+	 */
+	may_merge() {
+		return Boolean(frappe.user.has_role(["System Manager", "Administrator"]));
+	},
+
+	/**
 	 * Add Merge Files to the Actions menu of the File list (Frappe's File
 	 * Manager view, or its Report view), once per view.
 	 * @param {frappe.views.ListView} listview
@@ -95,6 +103,10 @@ frappe.ui.file_merge = {
 			return;
 		}
 		view.data_steward_file_merge = true;
+		// Only a System Manager may merge files, so nobody else is shown the action
+		if (!frappe.ui.file_merge.may_merge()) {
+			return;
+		}
 		data_steward.check_capability("file_merge").then((enabled) => {
 			if (enabled) {
 				view.page.add_actions_menu_item(__("Merge Files"), () =>

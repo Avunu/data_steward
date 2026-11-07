@@ -6,7 +6,8 @@
 // Custom Script for File DocType
 frappe.ui.form.on("File", {
 	refresh: function (frm) {
-		if (frm.is_new() || frm.doc.is_folder) {
+		// Only a System Manager may merge files, so nobody else is shown the button
+		if (frm.is_new() || frm.doc.is_folder || !frappe.ui.file_merge.may_merge()) {
 			return;
 		}
 		// Check if the file merge capability is enabled

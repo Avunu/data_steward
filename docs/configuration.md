@@ -37,7 +37,7 @@ An enabled tool still checks who is calling it. Each endpoint checks, in this or
 | Set Clearance Date               | Accounts Manager, System Manager | Write on the Payment Entry                                                                                                      |
 | Manually Clear, Remove Clearance | Accounts Manager, System Manager | Write on the Journal Entry                                                                                                      |
 
-The Administrator user passes every role check. The buttons are shown to anyone who can open the form or list while the tool is enabled; a user without the role gets an error when they use it. See [Limitations and troubleshooting](troubleshooting.md#troubleshooting).
+The Administrator user passes every role check. The buttons are shown to anyone who can open the form or list while the tool is enabled; a user without the role gets an error when they use it. File merge is the exception: its buttons are shown only to a System Manager. See [Limitations and troubleshooting](troubleshooting.md#troubleshooting).
 
 ## Editable side panel
 
