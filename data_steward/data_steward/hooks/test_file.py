@@ -411,6 +411,26 @@ class TestMergeFiles(DataStewardIntegrationTestCase):
 		self.assertFalse(frappe.db.exists("File", merged.name))
 		self.assertTrue(os.path.exists(kept.get_full_path()))
 
+	def test_copies_of_shared_content_are_left_alone(self):
+		"""When the merged file already uses the kept file's content, the
+		attachment copies of that content are the kept file's own: nothing
+		about them changes, and the log does not say they were repointed."""
+		content = frappe.generate_hash(length=32).encode()
+		kept, merged = make_file(content), make_file(content, file_name="_DS Test other name.txt")
+		copy = merged.create_attachment_copy("ToDo", _todo().name, ignore_permissions=True)
+		before = frappe.db.get_value("File", copy.name, ["file_name", "file_url"], as_dict=True)
+
+		with self.capability_enabled("file_merge"):
+			results = merge_files(kept.name, [merged.name])
+		_commit()
+
+		self.assertTrue(results[0]["merged"])
+		self.assertNotIn("other File record(s)", results[0]["message"])
+		self.assertEqual(
+			frappe.db.get_value("File", copy.name, ["file_name", "file_url"], as_dict=True), before
+		)
+		self.assertTrue(os.path.exists(kept.get_full_path()))
+
 	def test_unshared_content_is_deleted_after_the_commit(self):
 		kept, merged = make_file(), make_file()
 		path = merged.get_full_path()

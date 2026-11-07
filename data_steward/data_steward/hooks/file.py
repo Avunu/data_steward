@@ -532,8 +532,11 @@ def _merge_one(
 	keep = cast(str, kept.name)
 	outcome.leftovers.append(leftover_of(merged))
 	outcome.kept_row = not cloud and keeps_its_row(merged, kept)
-	# a copy that is merged in this run gets its own turn
-	copies = find_copies(merged, exclude={*run, name, keep})
+	# A copy that is merged in this run gets its own turn. Without cloud_storage,
+	# the copies of content the kept file already uses are the kept file's own:
+	# nothing about them changes.
+	shares_kept_content = not cloud and merged.file_url == kept.file_url
+	copies = [] if shares_kept_content else find_copies(merged, exclude={*run, name, keep})
 
 	changes: list[UrlChange] = []
 	if merged.file_url:
