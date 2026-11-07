@@ -1,5 +1,13 @@
 # Changelog
 
+## [16.2.0](https://github.com/Avunu/data_steward/compare/v16.1.0...v16.2.0) (2026-11-07)
+
+
+### Features
+
+* merge duplicate files from the File list and form ([#80](https://github.com/Avunu/data_steward/issues/80)) ([99d0923](https://github.com/Avunu/data_steward/commit/99d0923102f9b73ba3ad9002b5214975e342b384))
+* show the app's logo in the About dialog, on frappe-nix 2.4.0 ([#77](https://github.com/Avunu/data_steward/issues/77)) ([71fe820](https://github.com/Avunu/data_steward/commit/71fe820ad5865f3a0fcfbd26649f7a851bee4a18))
+
 ## [16.1.0](https://github.com/Avunu/data_steward/compare/v16.0.1...v16.1.0) (2026-11-04)
 
 
