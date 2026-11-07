@@ -1,5 +1,12 @@
 # Changelog
 
+## [16.3.0](https://github.com/Avunu/data_steward/compare/v16.2.0...v16.3.0) (2026-11-07)
+
+
+### Features
+
+* **merge:** show the file merge buttons only to a System Manager ([#81](https://github.com/Avunu/data_steward/issues/81)) ([ac2ffa6](https://github.com/Avunu/data_steward/commit/ac2ffa63267f31cc0b29db02a32b29eff6459d2f))
+
 ## [16.2.0](https://github.com/Avunu/data_steward/compare/v16.1.0...v16.2.0) (2026-11-07)
 
 
