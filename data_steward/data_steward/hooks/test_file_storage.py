@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import os
 from contextlib import ExitStack, contextmanager
+from datetime import datetime
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock, patch
 
@@ -64,6 +65,7 @@ S3_SETTINGS = {
 	"bucket": "test",
 	"endpoint_url": "http://127.0.0.1:1",
 }
+TIMESTAMP = datetime(2026, 1, 15, 12, 0)
 
 
 def _file(**fields: Any) -> File:
@@ -228,7 +230,11 @@ class TestAssociationQueries(DataStewardIntegrationTestCase):
 		)
 
 	def test_add(self):
-		with patch.object(frappe, "get_doc") as get_doc:
+		# now_datetime reads System Settings through frappe.get_doc when its cache is cold
+		with (
+			patch.object(frappe, "get_doc") as get_doc,
+			patch.object(file_storage, "now_datetime", return_value=TIMESTAMP),
+		):
 			file_storage._add_association("K", ("ToDo", "T1"), 3)
 
 		row = get_doc.call_args.args[0]
@@ -243,7 +249,8 @@ class TestAssociationQueries(DataStewardIntegrationTestCase):
 			},
 		)
 		self.assertEqual(
-			(row["link_doctype"], row["link_name"], row["user"]), ("ToDo", "T1", "Administrator")
+			(row["link_doctype"], row["link_name"], row["user"], row["timestamp"]),
+			("ToDo", "T1", "Administrator", TIMESTAMP),
 		)
 		get_doc.return_value.db_insert.assert_called_once_with()
 
