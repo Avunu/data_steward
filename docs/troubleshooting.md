@@ -42,7 +42,7 @@ Fix: ask a System Manager to tick the tool in **Data Steward Settings**.
 
 ### "This action is only allowed for System Manager"
 
-The message comes from Frappe, under the title **Not Permitted**, and names the roles the tool accepts: System Manager for bulk merge, Item Manager or System Manager for Convert to Variant, Accounts Manager or System Manager for the clearance tools.
+The message comes from Frappe, under the title **Not Permitted**, and names the roles the tool accepts: System Manager for bulk merge and file merge, Item Manager or System Manager for Convert to Variant, Accounts Manager or System Manager for the clearance tools.
 
 Fix: give the user one of those roles, or have someone who has one make the change.
 
