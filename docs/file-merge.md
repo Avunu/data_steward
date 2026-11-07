@@ -13,7 +13,7 @@ Frappe's own rename-and-merge, which [bulk merge](merge-records.md) uses, is not
 ## Before you start
 
 - A System Manager must tick **Allow File Merge** in **Data Steward Settings**. See [Configuration](configuration.md).
-- You need the System Manager role, write permission on the file you keep and delete permission on each file you merge. Frappe gives a user those on a File they uploaded, on one attached to a document they may change, or on one shared with them; the System Manager role alone does not, and Administrator always has them.
+- You need the System Manager role, write permission on the file you keep and delete permission on each file you merge. Frappe gives a user both on a File they uploaded or on one attached to a document they may change. Sharing a File gives write permission, enough for the file you keep, but never delete permission. The System Manager role alone gives neither, and Administrator always has both.
 - The files must all be private or all be public, and stored in the same place: on the site, in cloud storage, or at the same kind of external address.
 
 > [!WARNING]
@@ -43,12 +43,12 @@ When the merge is done, a **File Merge Log** shows one line per merged file: how
 For each merged file:
 
 - every Attach and Attach Image field that holds its URL, in every DocType, child tables and Single DocTypes included, gets the kept file's URL;
-- every Text Editor, HTML Editor, Markdown Editor, Long Text and Code field that contains its URL gets the kept file's URL in its place. The URL is replaced where it stands on its own, relative or with the site's address, percent-encoded or HTML-escaped: `/files/logo.png.bak` or `/files/logo.png-2` is left alone. A private file's `?fid=` is kept when the merged File stays (below) and dropped when it is deleted;
+- every Text Editor, HTML Editor, Markdown Editor, Long Text and Code field that contains its URL gets the kept file's URL in its place. The URL is replaced where it stands on its own, relative or with the site's address, percent-encoded or HTML-escaped: `/files/logo.png.bak` or `/files/logo.png-2` is left alone. A private file's `?fid=` is kept when the merged File stays (below) and dropped when it is deleted. Spaces, quotes, `<`, `>` and backticks in the kept file's URL are written percent-encoded in these fields, so that the URL cannot end an HTML attribute or a Markdown link early;
 - when the merged File record is deleted, every Link field that names it, and every comment, share and version that belongs to it, moves to the kept file, as in Frappe's own merge;
-- other File records that share its content, the attachment copies Frappe makes, take the kept file's content;
+- other File records that share its content, the attachment copies Frappe makes, take the kept file's content. Only a record with exactly the same URL counts: `/files/Logo.png` is another file than `/files/logo.png`, although the database compares them without regard to case;
 - a comment on the kept file records what was merged into it and how many references were changed.
 
-These are written straight to the database, without saving each document, so they also change submitted and cancelled documents, and the documents' **Last Updated On** does not change. The records of the past are left alone: **Version** and **Deleted Document**.
+These are written straight to the database, without saving each document, so they also change submitted and cancelled documents, and the documents' **Last Updated On** does not change. The records of the past are left alone: **Version** and **Deleted Document**. After the merge is saved, the caches Frappe builds from those documents are cleared: each user's desk loads afresh (with the app logo, for example) and the website's cached pages are rebuilt.
 
 The kept file keeps its own name, content and settings.
 
@@ -68,6 +68,7 @@ On a site with the [cloud_storage](https://github.com/agritheory/cloud_storage) 
 - References to the merged file's `/api/method/retrieve?key=<KEY>` URL are rewritten like any other URL, also when the key itself is percent-encoded.
 - The merged file's **sharing link** moves to the kept file when the kept file has none, so links already sent out keep working and now share the kept file. When both have one, the merged file's link stops working; links to it on the site are changed to the kept file's, and the merge log says so.
 - The merged file's **versions** are not carried over, and the log says how many there were.
+- Other File records that share the merged file's content, by URL or by S3 key, are merged into the kept file too, the same way, and the log says how many. The app's delete removes the content a File record names even when another record uses it, so a record left sharing the kept file's content could later remove it.
 - The merged file's object in the bucket is deleted after the merge is saved, through the app's own S3 client, and only when no File record names its key any more, in its URL or its S3 key. The app's own delete would remove the object whatever else uses it, so it is never left to act on the merged File record. In a bucket with versioning, deleting an object keeps its earlier versions, as it does when the app deletes a file.
 - The kept file's object is looked up in the bucket before anything is merged.
 
@@ -90,6 +91,7 @@ A single file is refused, with a red line in the log, when it is the file to kee
 - A URL written with a different site address, such as an old domain, is not changed.
 - Each merge searches every Attach and text field of the site, so on a large site a merge of many files takes a while. Merge in batches.
 - The merged files' own names and settings are not copied to the kept file.
+- A **Website Theme** whose custom SCSS used the merged file's URL is changed, but its compiled style sheet is not rebuilt. The log names the theme: open it and save it to rebuild the style sheet.
 
 ## Related
 

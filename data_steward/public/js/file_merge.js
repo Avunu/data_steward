@@ -7,7 +7,8 @@
 const escape = (text) => frappe.utils.escape_html(text);
 
 /**
- * How a File reads in the dialogs: its file name, then its ID.
+ * How a File reads in the dialogs: its file name, then its ID. Plain text: a
+ * file name may hold `<` or `"`, so escape it wherever it goes into HTML.
  * @param {{name: string, file_name?: unknown}} file
  */
 const file_label = (file) => (file.file_name ? `${file.file_name} (${file.name})` : file.name);
@@ -132,7 +133,8 @@ frappe.ui.file_merge = {
 					label: __("File to Keep"),
 					fieldname: "keep",
 					fieldtype: "Select",
-					options: checked.map((doc) => ({ label: file_label(doc), value: doc.name })),
+					// Frappe writes a Select option's label as HTML
+					options: checked.map((doc) => ({ label: escape(file_label(doc)), value: doc.name })),
 					reqd: 1,
 				},
 			],

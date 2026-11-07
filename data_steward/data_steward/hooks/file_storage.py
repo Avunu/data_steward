@@ -28,6 +28,8 @@ from frappe import _
 from frappe.utils import now_datetime
 
 if TYPE_CHECKING:
+	from collections.abc import Collection
+
 	from frappe.core.doctype.file.file import File
 
 LOCAL = "local"
@@ -217,29 +219,45 @@ def move_sharing_link(merged: File, kept: File) -> bool | None:
 	return True
 
 
-def repoint_copies(merged: File, kept: File) -> int:
-	"""Other File rows that use the merged File's content (Frappe's attachment
-	copies share its `file_url`; cloud_storage's may share its `s3_key`) take the
-	kept File's content, so none of them keeps the merged content alive or shows
-	it any longer. Returns how many rows changed."""
+def find_copies(file: Fields, exclude: Collection[str]) -> list[Any]:
+	"""Other File rows that use `file`'s content: Frappe's attachment copies
+	share its `file_url`; cloud_storage's may share its `s3_key`. Each row has
+	`name`, `file_url`, `is_private` and, with cloud_storage, `s3_key` and
+	`sharing_link`.
+
+	MariaDB compares text regardless of case, accents and trailing spaces, so
+	the query also finds `/files/Logo.png`, another file on a case-sensitive
+	disk, for `/files/logo.png`; only rows that are exactly the same count."""
+	url = file.get("file_url") or ""
+	cloud = has_cloud_storage()
+	keys = cloud_keys(file) if cloud else frozenset()
 	or_filters: dict[str, Any] = {}
-	if merged.file_url:
-		or_filters["file_url"] = merged.file_url
-	keys = cloud_keys(merged)
-	if keys and has_cloud_storage():
+	if url:
+		or_filters["file_url"] = url
+	if keys:
 		or_filters["s3_key"] = ("in", sorted(keys))
 	if not or_filters:
-		return 0
-	copies = frappe.get_all(
+		return []
+	fields = ["name", "file_url", "is_private"]
+	if cloud:
+		fields += ["s3_key", "sharing_link"]
+	rows = frappe.get_all(
 		"File",
-		filters={"name": ("not in", (merged.name, kept.name)), "is_folder": 0},
+		filters={"name": ("not in", sorted(exclude)), "is_folder": 0},
 		or_filters=or_filters,
-		pluck="name",
+		fields=fields,
 	)
+	return [row for row in rows if (url and row.file_url == url) or (keys and row.get("s3_key") in keys)]
+
+
+def repoint_copies(names: list[str], kept: File) -> int:
+	"""The copies of a merged File (`find_copies`) take the kept File's
+	content, so none of them keeps the merged content alive or shows it any
+	longer. Returns how many rows changed."""
 	values = {fieldname: kept.get(fieldname) for fieldname in content_fields()}
-	for name in copies:
+	for name in names:
 		frappe.db.set_value("File", name, values)
-	return len(copies)
+	return len(names)
 
 
 @dataclass(frozen=True)
@@ -267,7 +285,8 @@ def _url_in_use(url: str) -> bool:
 
 def _key_in_use(key: str) -> bool:
 	return bool(
-		frappe.db.exists("File", {"s3_key": key}) or frappe.db.exists("File", {"file_url": RETRIEVE_URL + key})
+		frappe.db.exists("File", {"s3_key": key})
+		or frappe.db.exists("File", {"file_url": RETRIEVE_URL + key})
 	)
 
 

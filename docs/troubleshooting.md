@@ -90,7 +90,7 @@ Fix: tick the duplicate files and the one to keep, and no folders.
 
 ### A "Failed" line in the File Merge Log
 
-That file was left as it was, and the line says why: it is the file you keep, it is a folder, it no longer exists, it is private while the kept file is public (or the other way around), it is stored in a different place, or you lack delete permission on it. Frappe gives that permission on a file you uploaded, on one attached to a document you may change, or on one shared with you; the System Manager role alone is not enough.
+That file was left as it was, and the line says why: it is the file you keep, it is a folder, it no longer exists, it is private while the kept file is public (or the other way around), it is stored in a different place, or you lack delete permission on it. Frappe gives that permission on a file you uploaded or on one attached to a document you may change. Sharing a file does not give it, and the System Manager role alone is not enough.
 
 Fix: correct the cause, or merge that file as the user who uploaded it or as Administrator.
 

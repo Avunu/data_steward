@@ -45,6 +45,11 @@ def _todo(description: str = "_DS Test file merge") -> Any:
 	return frappe.get_doc({"doctype": "ToDo", "description": description}).insert(ignore_permissions=True)
 
 
+def _in_text(url: str) -> str:
+	"""A URL as the merge writes it into a text field: spaces percent-encoded."""
+	return url.replace(" ", "%20")
+
+
 def _attach(content: bytes | None = None, *, to: Any, **fields: Any) -> File:
 	return make_file(content, attached_to_doctype=to.doctype, attached_to_name=to.name, **fields)
 
@@ -84,7 +89,25 @@ class TestBuildUrlRewrite(DataStewardIntegrationTestCase):
 
 		self.assertEqual(rewrite.sub("/files/a%20b&c.png")[0], "/files/k%20l.png")
 		self.assertEqual(rewrite.sub("/files/a%20b%26c.png")[0], "/files/k%20l.png")
-		self.assertEqual(rewrite.sub("/files/a b&amp;c.png")[0], "/files/k l.png")
+		# In text, the new URL's space is percent-encoded however the old one was written.
+		self.assertEqual(rewrite.sub("/files/a b&amp;c.png")[0], "/files/k%20l.png")
+		self.assertEqual(rewrite.sub("/files/a b&c.png")[0], "/files/k%20l.png")
+		# An Attach field takes the URL as stored.
+		self.assertEqual(rewrite.replacements["/files/a b&c.png"], "/files/k l.png")
+
+	def test_the_new_url_cannot_break_out_of_html_or_markdown(self):
+		"""A file name may hold quotes and angle brackets (Frappe only replaces
+		`/ \\ % ? #`), and text fields are written without Frappe's sanitising."""
+		new = '/files/x" onerror="alert(1)" <b>`.png'
+		rewrite = build_url_rewrite([UrlChange("/files/m.png", new)])
+
+		self.assertEqual(
+			rewrite.sub('<img src="/files/m.png"> <img src=/files/m.png> [m](/files/m.png)')[0],
+			'<img src="/files/x%22%20onerror=%22alert(1)%22%20%3Cb%3E%60.png">'
+			" <img src=/files/x%22%20onerror=%22alert(1)%22%20%3Cb%3E%60.png>"
+			" [m](/files/x%22%20onerror=%22alert(1)%22%20%3Cb%3E%60.png)",
+		)
+		self.assertEqual(rewrite.replacements["/files/m.png"], new)
 
 	def test_cloud_storage_key_spellings(self):
 		rewrite = build_url_rewrite(
@@ -111,6 +134,33 @@ class TestBuildUrlRewrite(DataStewardIntegrationTestCase):
 		self.assertEqual(kept.sub("/private/files/a.png?fid=M1")[0], "/private/files/k.png?fid=M1")
 		# Another File with the same URL is a copy, which takes the kept file's URL too.
 		self.assertEqual(dropped.sub("/private/files/a.png?fid=M12")[0], "/private/files/k.png?fid=M12")
+
+	def test_private_fid_followed_by_another_parameter(self):
+		dropped = build_url_rewrite([UrlChange("/private/files/a.png", "/private/files/k.png", old_fid="M1")])
+		kept = build_url_rewrite(
+			[UrlChange("/private/files/a.png", "/private/files/k.png", old_fid="M1", new_fid="M1")]
+		)
+
+		# The fid of a deleted File is dropped, and the next parameter starts the query.
+		self.assertEqual(
+			dropped.sub('<a href="/private/files/a.png?fid=M1&download=1">')[0],
+			'<a href="/private/files/k.png?download=1">',
+		)
+		self.assertEqual(
+			dropped.sub('<a href="/private/files/a.png?fid=M1&amp;download=1">')[0],
+			'<a href="/private/files/k.png?download=1">',
+		)
+		self.assertEqual(
+			dropped.sub("/private/files/a.png?fid=M1 and more")[0], "/private/files/k.png and more"
+		)
+		self.assertEqual(
+			kept.sub("/private/files/a.png?fid=M1&amp;download=1")[0],
+			"/private/files/k.png?fid=M1&amp;download=1",
+		)
+		self.assertEqual(
+			dropped.sub("/private/files/a.png?fid=M12&download=1")[0],
+			"/private/files/k.png?fid=M12&download=1",
+		)
 
 	def test_doctypes_without_a_table_or_column_are_skipped(self):
 		answers = [["_DS Test Gone", "ToDo", "Website Settings"], [], []]
@@ -199,7 +249,9 @@ class TestMergeFilesGuards(DataStewardIntegrationTestCase):
 		messages_before = len(frappe.local.message_log)
 
 		with self.capability_enabled("file_merge"):
-			results = merge_files(kept.name, [kept.name, "Home", "_DS Test no such file", private.name, remote.name])
+			results = merge_files(
+				kept.name, [kept.name, "Home", "_DS Test no such file", private.name, remote.name]
+			)
 
 		self.assertEqual([r["merged"] for r in results], [False] * 5)
 		messages = [r["message"] for r in results]
@@ -286,10 +338,11 @@ class TestMergeFiles(DataStewardIntegrationTestCase):
 		self.assertEqual(results[0]["references"], 4)
 		slideshow.reload()
 		self.assertEqual(slideshow.get("slideshow_items")[0].image, kept.file_url)
-		self.assertEqual(slideshow.get("header"), f'<img src="{kept.file_url}">')
+		self.assertEqual(slideshow.get("header"), f'<img src="{_in_text(kept.file_url)}">')
 		self.assertEqual(frappe.db.get_single_value("Website Settings", "banner_image"), kept.file_url)
 		self.assertEqual(
-			frappe.db.get_single_value("Website Settings", "banner_html"), f'<img src="{kept.file_url}">'
+			frappe.db.get_single_value("Website Settings", "banner_html"),
+			f'<img src="{_in_text(kept.file_url)}">',
 		)
 		self.assertEqual(frappe.db.get_single_value("Website Settings", "app_logo"), f"{merged.file_url}.bak")
 		self.assertEqual(frappe.db.get_single_value("Website Settings", "head_html"), f"{merged.file_url}-2")
@@ -304,7 +357,9 @@ class TestMergeFiles(DataStewardIntegrationTestCase):
 
 		self.assertTrue(results[0]["merged"])
 		self.assertIn(f"Kept as the attachment of ToDo {todo.name}", results[0]["message"])
-		row = frappe.db.get_value("File", merged.name, ["file_url", "content_hash", "attached_to_name"], as_dict=True)
+		row = frappe.db.get_value(
+			"File", merged.name, ["file_url", "content_hash", "attached_to_name"], as_dict=True
+		)
 		self.assertEqual((row.file_url, row.content_hash), (kept.file_url, kept.content_hash))
 		self.assertEqual(row.attached_to_name, todo.name)
 		self.assertIn(kept.file_url, [a.file_url for a in get_attachments("ToDo", todo.name)])
@@ -339,7 +394,7 @@ class TestMergeFiles(DataStewardIntegrationTestCase):
 
 		self.assertEqual(
 			_description(note.name),
-			f'<a href="{kept.file_url}?fid={attached.name}">a</a> <a href="{kept.file_url}">b</a>',
+			f'<a href="{_in_text(kept.file_url)}?fid={attached.name}">a</a> <a href="{_in_text(kept.file_url)}">b</a>',
 		)
 
 	def test_shared_content_never_deletes_the_kept_files_content(self):
@@ -401,6 +456,110 @@ class TestMergeFiles(DataStewardIntegrationTestCase):
 		self.assertIn("1 other File record(s)", results[0]["message"])
 		self.assertEqual(frappe.db.get_value("File", copy.name, "file_url"), kept.file_url)
 		self.assertFalse(os.path.exists(path))
+
+	def test_a_url_in_another_case_is_another_file(self):
+		"""MariaDB compares `/files/A.png` and `/files/a.png` as equal; on the
+		disk, and to Frappe, they are two files."""
+		suffix = frappe.generate_hash(length=8)
+		kept = make_file(file_name=f"_ds_case_kept_{suffix}.png")
+		merged = make_file(file_name=f"_ds_case_{suffix}.png")
+		other = make_file(file_name=f"_DS_CASE_{suffix}.png")
+		self.assertEqual(other.file_url.lower(), merged.file_url.lower())
+		self.assertNotEqual(other.file_url, merged.file_url)
+		item = _item("_DS Test File Merge Case", image=other.file_url)
+
+		with self.capability_enabled("file_merge"):
+			results = merge_files(kept.name, [merged.name])
+		_commit()
+
+		self.assertTrue(results[0]["merged"], results[0]["message"])
+		self.assertEqual(results[0]["message"], "Deleted.")
+		self.assertEqual(frappe.db.get_value("Item", item.name, "image"), other.file_url)
+		self.assertEqual(frappe.db.get_value("File", other.name, "file_url"), other.file_url)
+		self.assertTrue(os.path.exists(other.get_full_path()))
+		# On a case-insensitive disk the two would be one file, so the merged
+		# content is only removed when no URL in any case uses it.
+		self.assertTrue(os.path.exists(merged.get_full_path()))
+
+	def test_an_attachment_in_another_case_is_not_the_kept_file(self):
+		suffix = frappe.generate_hash(length=8)
+		kept = make_file(file_name=f"_ds_case_{suffix}.png")
+		todo = _todo()
+		_attach(file_name=f"_DS_CASE_{suffix}.png", to=todo)
+		merged = _attach(to=todo)
+
+		with self.capability_enabled("file_merge"):
+			results = merge_files(kept.name, [merged.name])
+
+		self.assertIn(f"Kept as the attachment of ToDo {todo.name}", results[0]["message"])
+		self.assertEqual(frappe.db.get_value("File", merged.name, "file_url"), kept.file_url)
+
+	def test_a_kept_url_with_quotes_stays_inside_the_attribute(self):
+		kept = make_file(file_name='_ds_x" onerror="alert(1)".png')
+		self.assertIn('"', kept.file_url)
+		merged = make_file()
+		item = _item(
+			"_DS Test File Merge Quote", image=merged.file_url, description=f'<img src="{merged.file_url}">'
+		)
+
+		with self.capability_enabled("file_merge"):
+			merge_files(kept.name, [merged.name])
+
+		row = frappe.db.get_value("Item", item.name, ["image", "description"], as_dict=True)
+		self.assertEqual(row.image, kept.file_url)
+		encoded = kept.file_url.replace('"', "%22").replace(" ", "%20")
+		self.assertEqual(row.description, f'<img src="{encoded}">')
+
+	def test_derived_caches_are_cleared_after_the_commit(self):
+		kept, merged = make_file(), make_file()
+		cache = frappe.cache
+		assert cache is not None
+		_item("_DS Test File Merge Cache", image=merged.file_url)
+		cache.hset("bootinfo", "_ds_test@example.com", {"app_logo_url": merged.file_url})
+
+		with self.capability_enabled("file_merge"):
+			merge_files(kept.name, [merged.name])
+		self.assertIsNotNone(cache.hget("bootinfo", "_ds_test@example.com"))
+		with patch("frappe.website.utils.clear_cache") as clear_website_cache:
+			_commit()
+
+		self.assertIsNone(cache.hget("bootinfo", "_ds_test@example.com"))
+		clear_website_cache.assert_called_with()
+
+	def test_nothing_merged_clears_no_cache(self):
+		kept = make_file()
+
+		with (
+			self.capability_enabled("file_merge"),
+			patch.object(file_merge, "clear_derived_caches") as clear_derived_caches,
+		):
+			results = merge_files(kept.name, ["_ds_no_such_file"])
+			_commit()
+
+		self.assertFalse(results[0]["merged"])
+		clear_derived_caches.assert_not_called()
+
+	def test_a_website_theme_is_named_for_a_rebuild(self):
+		kept, merged = make_file(), make_file()
+		theme = frappe.get_doc(
+			{
+				"doctype": "Website Theme",
+				"name": "_DS Test File Merge Theme",
+				"theme": "_DS Test File Merge Theme",
+				"custom": 1,
+				"custom_scss": f"body {{ background: url({merged.file_url}); }}",
+			}
+		)
+		theme.db_insert()
+
+		with self.capability_enabled("file_merge"):
+			results = merge_files(kept.name, [merged.name])
+
+		self.assertIn("Save Website Theme _DS Test File Merge Theme to rebuild", results[0]["message"])
+		self.assertEqual(
+			frappe.db.get_value("Website Theme", theme.name, "custom_scss"),
+			f"body {{ background: url({_in_text(kept.file_url)}); }}",
+		)
 
 	def test_comments_move_and_the_kept_file_records_the_merge(self):
 		kept, merged = make_file(), make_file(file_name="_ds_merged_audit.txt")

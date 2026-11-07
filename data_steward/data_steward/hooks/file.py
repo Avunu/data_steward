@@ -13,7 +13,8 @@ merged File this:
    Editor, Markdown Editor, Long Text and Code field, in normal, child and
    Single DocTypes (one query per field, never a document save);
 2. moves its attachments to the kept file (`file_storage` for how), and gives
-   the other File rows that share its content the kept file's content;
+   the other File rows that share its content the kept file's content (with
+   cloud_storage, merges them into the kept file as well);
 3. deletes the merged File, after pointing every Link and Dynamic Link to it
    at the kept File. Without cloud_storage, a merged File attached to a
    document stays instead, as that document's attachment of the kept file
@@ -21,7 +22,8 @@ merged File this:
 4. comments on the kept File.
 
 The merged file's content is removed after the transaction commits, and only
-when no File row uses it any more (`file_storage.remove_leftover`). Each merged
+when no File row uses it any more (`file_storage.remove_leftover`), and the
+caches Frappe derives from the rewritten documents are cleared. Each merged
 File runs in its own savepoint: one that fails is rolled back and reported,
 and the others still merge. Nothing here commits; the request does.
 """
@@ -48,8 +50,10 @@ from data_steward.data_steward.hooks.file_storage import (
 	NO_CONTENT,
 	RETRIEVE_URL,
 	SHARE_URL,
+	Fields,
 	Leftover,
 	content_exists,
+	find_copies,
 	has_cloud_storage,
 	leftover_of,
 	move_associations,
@@ -79,8 +83,13 @@ SKIP_DOCTYPES = frozenset(("File", "Version", "Deleted Document"))
 # or `/files/a.png-2`; a sentence's closing full stop is fine).
 _BEFORE = r"(?<![\w.~%/-])"
 _AFTER = r"(?![\w~%/-]|\.\w)"
-# A `?fid=<name>` query also ends where another parameter would begin.
-_AFTER_FID = r"(?![\w~%/&=-]|\.\w)"
+# The parameter after a private file's `?fid=<name>`, which starts the query
+# instead once the `?fid=` is dropped.
+_NEXT_PARAMETER = r"(?:&amp;|&)?"
+
+# Characters of the kept file's URL that would end an HTML attribute, a tag or
+# a Markdown link early; in text they are written percent-encoded.
+_UNSAFE_IN_TEXT = re.compile(r"[\s\"'<>`]")
 
 CLEARED_ON_DELETE = (
 	"thumbnail_url",
@@ -133,13 +142,27 @@ class UrlRewrite:
 	"""Every spelling of the URLs being replaced, each mapped to the new URL
 	spelled the same way."""
 
+	# what an Attach field's value becomes, exactly
 	replacements: dict[str, str]
 	pattern: re.Pattern[str]
 	# LIKE patterns that every spelling contains one of
 	like_patterns: tuple[str, ...]
 
+	def _replace(self, match: re.Match[str]) -> str:
+		found, separator = match.group(0), ""
+		if found not in self.replacements:
+			# a `?fid=` spelling that is dropped, with the parameter after it
+			separator = "&amp;" if found.endswith("&amp;") else "&"
+			found = found.removesuffix(separator)
+		new = self.replacements[found]
+		if separator and "?" not in new:
+			separator = "?"
+		return _UNSAFE_IN_TEXT.sub(lambda char: quote(char.group(0)), new) + separator
+
 	def sub(self, text: str) -> tuple[str, int]:
-		return self.pattern.subn(lambda match: self.replacements[match.group(0)], text)
+		"""Replace the URLs in a text field's value, with the new URL's
+		characters that are unsafe in HTML or Markdown percent-encoded."""
+		return self.pattern.subn(self._replace, text)
 
 
 @dataclass
@@ -147,7 +170,7 @@ class _Outcome:
 	references: int = 0
 	kept_row: bool = False
 	notes: list[str] = field(default_factory=list)
-	leftover: Leftover = field(default_factory=Leftover)
+	leftovers: list[Leftover] = field(default_factory=list)
 	# (doctype, name) of documents written, for their cache
 	touched: set[tuple[str, str]] = field(default_factory=set)
 
@@ -181,7 +204,8 @@ def build_url_rewrite(changes: list[UrlChange]) -> UrlRewrite:
 	site's URL, with and without the private file's `?fid=`."""
 	site = get_url().rstrip("/")
 	replacements: dict[str, str] = {}
-	fid_spellings: set[str] = set()
+	# `?fid=` spellings that the new URL drops
+	dropped_fid: set[str] = set()
 	relative: set[str] = set()
 	for change in changes:
 		for encode in ENCODINGS:
@@ -192,12 +216,13 @@ def build_url_rewrite(changes: list[UrlChange]) -> UrlRewrite:
 					spelling = f"{prefix}{old}?fid={change.old_fid}"
 					fid = f"?fid={change.new_fid}" if change.new_fid else ""
 					replacements.setdefault(spelling, f"{prefix}{new}{fid}")
-					fid_spellings.add(spelling)
+					if not fid:
+						dropped_fid.add(spelling)
 				replacements.setdefault(f"{prefix}{old}", f"{prefix}{new}")
 	replacements = {old: new for old, new in replacements.items() if old != new}
 	# The longest first, so an absolute spelling wins over the relative one inside it.
 	alternatives = "|".join(
-		re.escape(spelling) + (_AFTER_FID if spelling in fid_spellings else _AFTER)
+		re.escape(spelling) + _AFTER + (_NEXT_PARAMETER if spelling in dropped_fid else "")
 		for spelling in sorted(replacements, key=len, reverse=True)
 	)
 	return UrlRewrite(
@@ -289,7 +314,13 @@ def fields_with_matches(url_fields: list[UrlField], rewrite: UrlRewrite) -> list
 		if url_field.issingle:
 			continue
 		table = frappe.qb.DocType(url_field.doctype)
-		if frappe.qb.from_(table).select(table.name).where(_table_condition(url_field, rewrite)).limit(1).run():
+		if (
+			frappe.qb.from_(table)
+			.select(table.name)
+			.where(_table_condition(url_field, rewrite))
+			.limit(1)
+			.run()
+		):
 			matching.append(url_field)
 	single_rows = _single_rows([f for f in url_fields if f.issingle], rewrite)
 	single_keys = {(row.doctype, row.field) for row in single_rows}
@@ -302,12 +333,18 @@ def _rewrite_table_field(url_field: UrlField, rewrite: UrlRewrite, outcome: _Out
 	columns = [table.name, table[url_field.fieldname].as_("value")]
 	if url_field.istable:
 		columns += [table.parent, table.parenttype]
-	rows = frappe.qb.from_(table).select(*columns).where(_table_condition(url_field, rewrite)).run(as_dict=True)
+	rows = (
+		frappe.qb.from_(table).select(*columns).where(_table_condition(url_field, rewrite)).run(as_dict=True)
+	)
 
 	updates: dict[str, dict[str, str]] = {}
 	for row in rows:
 		if url_field.is_attach:
-			updates[row.name] = {url_field.fieldname: rewrite.replacements[row.value]}
+			# MariaDB's IN also matches another case or trailing spaces
+			new = rewrite.replacements.get(row.value)
+			if new is None:
+				continue
+			updates[row.name] = {url_field.fieldname: new}
 		else:
 			text, count = rewrite.sub(row.value)
 			if not count:
@@ -326,9 +363,9 @@ def _rewrite_single_fields(single_fields: list[UrlField], rewrite: UrlRewrite, o
 	attach = {(f.doctype, f.fieldname) for f in single_fields if f.is_attach}
 	for row in _single_rows(single_fields, rewrite):
 		if (row.doctype, row.field) in attach:
-			if row.value not in rewrite.replacements:
+			value = rewrite.replacements.get(row.value)
+			if value is None:
 				continue
-			value = rewrite.replacements[row.value]
 		else:
 			value, count = rewrite.sub(cast(str, row.value))
 			if not count:
@@ -369,15 +406,18 @@ def keeps_its_row(merged: File, kept: File) -> bool:
 	doctype, name = merged.attached_to_doctype, merged.attached_to_name
 	if not (doctype and name and frappe.db.exists("DocType", doctype) and frappe.db.exists(doctype, name)):
 		return False
-	return not frappe.db.exists(
+	urls = frappe.get_all(
 		"File",
-		{
+		filters={
 			"name": ("!=", merged.name),
 			"attached_to_doctype": doctype,
 			"attached_to_name": name,
 			"file_url": kept.file_url,
 		},
+		pluck="file_url",
 	)
+	# MariaDB's comparison ignores case: `/files/Logo.png` is another file
+	return kept.file_url not in urls
 
 
 def delete_merged_row(merged: File) -> None:
@@ -448,11 +488,52 @@ def _move_cloud_storage_records(merged: File, kept: File, outcome: _Outcome) -> 
 	return []
 
 
-def _merge_one(kept: File, name: str, url_fields: list[UrlField], cloud: bool, outcome: _Outcome) -> None:
+def _url_changes(file: Fields, kept: File) -> list[UrlChange]:
+	"""A File row's URL, and its `?fid=`, to replace with the kept file's URL
+	when the row is deleted."""
+	if not file.get("file_url"):
+		return []
+	return [
+		UrlChange(
+			file.get("file_url"),
+			kept.file_url or "",
+			old_fid=file.get("name") if cint(file.get("is_private")) else None,
+		)
+	]
+
+
+def _fold_copy_records(copies: list[File], kept: File, outcome: _Outcome) -> list[UrlChange]:
+	"""cloud_storage: the copies' attachments and sharing links go to the kept
+	File, as the merged File's do; the URLs to rewrite."""
+	changes: list[UrlChange] = []
+	attached = 0
+	for copy in copies:
+		attached += move_associations(copy, kept)
+		changes += _url_changes(copy, kept)
+		if move_sharing_link(copy, kept) is False:
+			changes.append(
+				UrlChange(SHARE_URL + copy.get("sharing_link"), SHARE_URL + kept.get("sharing_link"))
+			)
+	notes = [
+		_("{0} other File record(s) that used its content were merged into the kept file too.").format(
+			len(copies)
+		)
+	]
+	if attached:
+		notes.append(_("Their attachments to {0} document(s) now show the kept file.").format(attached))
+	outcome.notes += notes
+	return changes
+
+
+def _merge_one(
+	kept: File, name: str, url_fields: list[UrlField], cloud: bool, run: frozenset[str], outcome: _Outcome
+) -> None:
 	merged = load_merged(kept, name)
 	keep = cast(str, kept.name)
-	outcome.leftover = leftover_of(merged)
+	outcome.leftovers.append(leftover_of(merged))
 	outcome.kept_row = not cloud and keeps_its_row(merged, kept)
+	# a copy that is merged in this run gets its own turn
+	copies = find_copies(merged, exclude={*run, name, keep})
 
 	changes: list[UrlChange] = []
 	if merged.file_url:
@@ -466,13 +547,35 @@ def _merge_one(kept: File, name: str, url_fields: list[UrlField], cloud: bool, o
 				new_fid=name if outcome.kept_row else None,
 			)
 		)
+	folded: list[File] = []
 	if cloud:
 		changes += _move_cloud_storage_records(merged, kept, outcome)
+		# cloud_storage's delete hook removes the content a row names, whoever
+		# else uses it, so no row is left sharing the kept file's content
+		folded = [cast("File", frappe.get_doc("File", row.name)) for row in copies]
+		if folded:
+			changes += _fold_copy_records(folded, kept, outcome)
 	rewrite_urls(url_fields, build_url_rewrite(changes), outcome)
 
-	copies = repoint_copies(merged, kept)
-	if copies:
-		outcome.notes.append(_("{0} other File record(s) that used its content now use the kept file's.").format(copies))
+	for copy in folded:
+		outcome.leftovers.append(leftover_of(copy))
+		outcome.touched.add(("File", cast(str, copy.name)))
+		rewrite_links(cast(str, copy.name), keep, outcome)
+		delete_merged_row(copy)
+	if copies and not cloud:
+		repoint_copies([row.name for row in copies], kept)
+		outcome.touched.update(("File", row.name) for row in copies)
+		outcome.notes.append(
+			_("{0} other File record(s) that used its content now use the kept file's.").format(len(copies))
+		)
+
+	themes = sorted(theme for doctype, theme in outcome.touched if doctype == "Website Theme")
+	if themes:
+		outcome.notes.append(
+			_("Save Website Theme {0} to rebuild its style sheet with the kept file.").format(
+				", ".join(themes)
+			)
+		)
 
 	if outcome.kept_row:
 		frappe.db.set_value("File", name, {f: kept.get(f) for f in CONTENT_FIELDS})
@@ -508,14 +611,29 @@ def _clear_caches(touched: set[tuple[str, str]]) -> None:
 		frappe.clear_document_cache(doctype, name)
 
 
-def merge_one_in_savepoint(kept: File, name: str, url_fields: list[UrlField], cloud: bool) -> FileMergeResult:
+def clear_derived_caches() -> None:
+	"""After the commit: what Frappe builds from documents and keeps, which
+	the rewrites, made without saving, do not reach: every user's desk boot
+	info (the app logo is in it) and the website's cached pages."""
+	from frappe.website.utils import clear_cache
+
+	cache = frappe.cache
+	# a site always has its cache; the check is for the type checker
+	if cache:
+		cache.delete_key("bootinfo")
+	clear_cache()
+
+
+def merge_one_in_savepoint(
+	kept: File, name: str, url_fields: list[UrlField], cloud: bool, run: frozenset[str] = frozenset()
+) -> FileMergeResult:
 	savepoint = f"ds_file_merge_{frappe.generate_hash(length=10)}"
 	messages = len(frappe.local.message_log)
 	outcome = _Outcome()
 	outcome.touched.update({("File", cast(str, kept.name)), ("File", name)})
 	frappe.db.savepoint(savepoint)
 	try:
-		_merge_one(kept, name, url_fields, cloud, outcome)
+		_merge_one(kept, name, url_fields, cloud, run, outcome)
 	except Exception as exc:
 		frappe.db.rollback(save_point=savepoint)
 		_clear_caches(outcome.touched)
@@ -531,7 +649,8 @@ def merge_one_in_savepoint(kept: File, name: str, url_fields: list[UrlField], cl
 		}
 	frappe.db.release_savepoint(savepoint)
 	_clear_caches(outcome.touched)
-	frappe.db.after_commit.add(partial(remove_leftover, outcome.leftover))
+	for leftover in outcome.leftovers:
+		frappe.db.after_commit.add(partial(remove_leftover, leftover))
 	return {
 		"file": name,
 		"merged": True,
@@ -568,17 +687,18 @@ def parse_file_names(files: str | list[str]) -> list[str]:
 	return names
 
 
-def _scan_changes(kept: File, names: list[str]) -> list[UrlChange]:
+def _scan_changes(kept: File, names: list[str], cloud: bool = False) -> list[UrlChange]:
 	"""Every URL the run may replace, to find the fields that hold any of them."""
 	fields = ["name", "file_url", "is_private"]
-	if frappe.get_meta("File").has_field("sharing_link"):
-		fields.append("sharing_link")
+	meta = frappe.get_meta("File")
+	fields += [fieldname for fieldname in ("sharing_link", "s3_key") if meta.has_field(fieldname)]
 	changes: list[UrlChange] = []
-	for row in frappe.get_all("File", filters={"name": ("in", names)}, fields=fields):
-		if row.file_url:
-			changes.append(
-				UrlChange(row.file_url, kept.file_url or "", old_fid=row.name if row.is_private else None)
-			)
+	rows = frappe.get_all("File", filters={"name": ("in", names)}, fields=fields)
+	if cloud:
+		exclude = {*names, cast(str, kept.name)}
+		rows = [*rows, *(copy for row in rows for copy in find_copies(row, exclude=exclude))]
+	for row in rows:
+		changes += _url_changes(row, kept)
 		if row.get("sharing_link"):
 			changes.append(UrlChange(SHARE_URL + row.sharing_link, kept.file_url or ""))
 	return changes
@@ -596,5 +716,9 @@ def merge_files(keep: str, files: str | list[str]) -> list[FileMergeResult]:
 	names = parse_file_names(files)
 	kept = get_kept_file(keep)
 	cloud = has_cloud_storage()
-	url_fields = fields_with_matches(get_url_fields(), build_url_rewrite(_scan_changes(kept, names)))
-	return [merge_one_in_savepoint(kept, name, url_fields, cloud) for name in names]
+	url_fields = fields_with_matches(get_url_fields(), build_url_rewrite(_scan_changes(kept, names, cloud)))
+	run = frozenset(names)
+	results = [merge_one_in_savepoint(kept, name, url_fields, cloud, run) for name in names]
+	if any(result["merged"] for result in results):
+		frappe.db.after_commit.add(clear_derived_caches)
+	return results

@@ -12,6 +12,7 @@ has it, against a local S3-compatible server such as moto's.
 
 from __future__ import annotations
 
+import os
 from contextlib import ExitStack, contextmanager
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock, patch
@@ -22,6 +23,7 @@ from data_steward.data_steward.hooks import file as file_merge
 from data_steward.data_steward.hooks import file_storage
 from data_steward.data_steward.hooks.file import (
 	UrlChange,
+	_fold_copy_records,
 	_move_cloud_storage_records,
 	_Outcome,
 	_scan_changes,
@@ -39,6 +41,7 @@ from data_steward.data_steward.hooks.file_storage import (
 	cloud_keys,
 	content_exists,
 	content_fields,
+	find_copies,
 	leftover_of,
 	move_associations,
 	move_sharing_link,
@@ -72,7 +75,14 @@ def _file(**fields: Any) -> File:
 
 
 def _todo() -> Any:
-	return frappe.get_doc({"doctype": "ToDo", "description": "_DS Test cloud"}).insert(ignore_permissions=True)
+	return frappe.get_doc({"doctype": "ToDo", "description": "_DS Test cloud"}).insert(
+		ignore_permissions=True
+	)
+
+
+def _in_text(url: str) -> str:
+	"""A URL as the merge writes it into a text field: spaces percent-encoded."""
+	return url.replace(" ", "%20")
 
 
 class _S3Error(Exception):
@@ -197,7 +207,9 @@ class TestKeptContent(DataStewardIntegrationTestCase):
 		with patch.object(frappe, "get_attr") as get_attr:
 			client = file_storage.cloud_client()
 
-		get_attr.assert_called_once_with("cloud_storage.cloud_storage.overrides.file.get_cloud_storage_client")
+		get_attr.assert_called_once_with(
+			"cloud_storage.cloud_storage.overrides.file.get_cloud_storage_client"
+		)
 		self.assertIs(client, get_attr.return_value.return_value)
 
 
@@ -222,9 +234,17 @@ class TestAssociationQueries(DataStewardIntegrationTestCase):
 		row = get_doc.call_args.args[0]
 		self.assertEqual(
 			{key: row[key] for key in ("doctype", "parent", "parenttype", "parentfield", "idx")},
-			{"doctype": ASSOCIATION, "parent": "K", "parenttype": "File", "parentfield": "file_association", "idx": 3},
+			{
+				"doctype": ASSOCIATION,
+				"parent": "K",
+				"parenttype": "File",
+				"parentfield": "file_association",
+				"idx": 3,
+			},
 		)
-		self.assertEqual((row["link_doctype"], row["link_name"], row["user"]), ("ToDo", "T1", "Administrator"))
+		self.assertEqual(
+			(row["link_doctype"], row["link_name"], row["user"]), ("ToDo", "T1", "Administrator")
+		)
 		get_doc.return_value.db_insert.assert_called_once_with()
 
 	def test_reparent_and_drop(self):
@@ -241,7 +261,9 @@ class TestMoveAssociations(DataStewardIntegrationTestCase):
 		a, b, c = _todo(), _todo(), _todo()
 		kept = make_file()
 		merged = make_file(attached_to_doctype="ToDo", attached_to_name=a.name)
-		fake = FakeAssociations({kept.name: [("ToDo", c.name)], merged.name: [("ToDo", b.name), ("ToDo", c.name)]})
+		fake = FakeAssociations(
+			{kept.name: [("ToDo", c.name)], merged.name: [("ToDo", b.name), ("ToDo", c.name)]}
+		)
 
 		with fake.installed():
 			moved = move_associations(merged, kept)
@@ -287,27 +309,57 @@ class TestSharingLink(DataStewardIntegrationTestCase):
 		self.assertIsNone(move_sharing_link(_file(name="M"), _file(name="K", sharing_link="222")))
 
 
-class TestRepointCopies(DataStewardIntegrationTestCase):
-	def test_cloud_copies_share_the_key(self):
+class TestCopies(DataStewardIntegrationTestCase):
+	def test_cloud_copies_share_the_url_or_the_key(self):
 		merged = _file(name="M", file_url=f"{RETRIEVE_URL}f/a.png", s3_key="f/a.png")
-		kept = _file(name="K", file_url=f"{RETRIEVE_URL}f/k.png", s3_key="f/k.png", file_name="k.png")
+		rows = [
+			frappe._dict(name="C1", file_url=f"{RETRIEVE_URL}f/a.png", s3_key=None),
+			frappe._dict(name="C2", file_url="/files/a.png", s3_key="f/a.png"),
+			# what MariaDB's case-insensitive comparison also returns
+			frappe._dict(name="C3", file_url=f"{RETRIEVE_URL}f/A.png", s3_key="f/A.png"),
+		]
 
 		with (
 			patch.object(file_storage, "has_cloud_storage", return_value=True),
-			patch.object(frappe, "get_all", return_value=["C1"]) as get_all,
-			patch.object(frappe.db, "set_value") as set_value,
+			patch.object(frappe, "get_all", return_value=rows) as get_all,
 		):
-			self.assertEqual(repoint_copies(merged, kept), 1)
+			copies = find_copies(merged, exclude={"M", "K"})
 
+		self.assertEqual([row.name for row in copies], ["C1", "C2"])
 		self.assertEqual(
 			get_all.call_args.kwargs["or_filters"],
 			{"file_url": f"{RETRIEVE_URL}f/a.png", "s3_key": ("in", ["f/a.png"])},
 		)
-		values = set_value.call_args.args[2]
-		self.assertEqual((values["file_url"], values["s3_key"], values["file_name"]), (kept.file_url, "f/k.png", "k.png"))
+		self.assertEqual(get_all.call_args.kwargs["filters"]["name"], ("not in", ["K", "M"]))
+		self.assertIn("sharing_link", get_all.call_args.kwargs["fields"])
+
+	def test_only_the_exact_url_without_cloud_storage(self):
+		merged = make_file(file_name=f"_ds_copy_{frappe.generate_hash(length=8)}.png")
+		copy = make_file(file_name="_ds_copy.png")
+		frappe.db.set_value("File", copy.name, "file_url", merged.file_url)
+		other = make_file(file_name="_ds_other.png")
+		frappe.db.set_value("File", other.name, "file_url", merged.file_url.upper())
+
+		copies = find_copies(merged, exclude={merged.name})
+
+		self.assertEqual([row.name for row in copies], [copy.name])
 
 	def test_a_file_without_content_has_no_copies(self):
-		self.assertEqual(repoint_copies(_file(name="M", file_url=""), _file(name="K")), 0)
+		self.assertEqual(find_copies(_file(name="M", file_url=""), exclude={"M"}), [])
+
+	def test_copies_take_the_kept_content(self):
+		kept = _file(name="K", file_url=f"{RETRIEVE_URL}f/k.png", s3_key="f/k.png", file_name="k.png")
+
+		with (
+			patch.object(file_storage, "has_cloud_storage", return_value=True),
+			patch.object(frappe.db, "set_value") as set_value,
+		):
+			self.assertEqual(repoint_copies(["C1"], kept), 1)
+
+		values = set_value.call_args.args[2]
+		self.assertEqual(
+			(values["file_url"], values["s3_key"], values["file_name"]), (kept.file_url, "f/k.png", "k.png")
+		)
 
 
 class TestRemoveLeftover(DataStewardIntegrationTestCase):
@@ -370,10 +422,67 @@ class TestMergeWithCloudStorage(DataStewardIntegrationTestCase):
 		# cloud_storage lists attachments from the association rows, so the merged row goes.
 		self.assertFalse(frappe.db.exists("File", merged.name))
 		self.assertEqual(fake.links(kept.name), [("ToDo", a.name), ("ToDo", b.name)])
-		self.assertEqual(frappe.db.get_value("ToDo", note.name, "description"), f'<img src="{kept.file_url}">')
+		self.assertEqual(
+			frappe.db.get_value("ToDo", note.name, "description"), f'<img src="{_in_text(kept.file_url)}">'
+		)
+
+	def test_copies_are_folded_into_the_kept_file(self):
+		"""With cloud_storage a copy that kept sharing the kept file's content
+		could delete it through the app's delete hook, so it is merged too."""
+		a, b = _todo(), _todo()
+		kept, merged = make_file(), make_file()
+		copy = merged.create_attachment_copy("ToDo", b.name, ignore_permissions=True)
+		copy.add_comment("Comment", "_DS Test note on the copy")
+		note = _todo()
+		frappe.db.set_value("ToDo", note.name, "description", f'<img src="{copy.file_url}">')
+		path = merged.get_full_path()
+		fake = FakeAssociations({merged.name: [("ToDo", a.name)]})
+
+		with (
+			fake.installed(),
+			patch.object(file_merge, "has_cloud_storage", return_value=True),
+			self.capability_enabled("file_merge"),
+		):
+			results = merge_files(kept.name, [merged.name])
+		frappe.db.after_commit.run()
+
+		self.assertTrue(results[0]["merged"], results[0]["message"])
+		self.assertIn(
+			"1 other File record(s) that used its content were merged into the kept file too.",
+			results[0]["message"],
+		)
+		self.assertIn("Their attachments to 1 document(s) now show the kept file.", results[0]["message"])
+		self.assertFalse(frappe.db.exists("File", copy.name))
+		self.assertEqual(fake.links(kept.name), [("ToDo", a.name), ("ToDo", b.name)])
+		self.assertEqual(
+			frappe.db.get_value("ToDo", note.name, "description"), f'<img src="{_in_text(kept.file_url)}">'
+		)
+		self.assertIn(
+			"_DS Test note on the copy",
+			frappe.get_all(
+				"Comment", filters={"reference_doctype": "File", "reference_name": kept.name}, pluck="content"
+			),
+		)
+		self.assertFalse(os.path.exists(path))
+
+	def test_copies_merged_in_the_same_run_get_their_own_turn(self):
+		kept, merged = make_file(), make_file()
+		copy = merged.create_attachment_copy("ToDo", _todo().name, ignore_permissions=True)
+
+		with (
+			FakeAssociations({}).installed(),
+			patch.object(file_merge, "has_cloud_storage", return_value=True),
+			self.capability_enabled("file_merge"),
+		):
+			results = merge_files(kept.name, [merged.name, copy.name])
+
+		self.assertEqual([r["merged"] for r in results], [True, True])
+		self.assertNotIn("other File record", results[0]["message"])
 
 	def test_cloud_storage_records_of_the_merged_file(self):
-		merged = _file(name="M", sharing_link="111", versions=[frappe._dict(version="v1"), frappe._dict(version="v2")])
+		merged = _file(
+			name="M", sharing_link="111", versions=[frappe._dict(version="v1"), frappe._dict(version="v2")]
+		)
 		kept = _file(name="K", sharing_link="222")
 		outcome = _Outcome()
 
@@ -389,10 +498,40 @@ class TestMergeWithCloudStorage(DataStewardIntegrationTestCase):
 			],
 		)
 
+	def test_sharing_links_of_folded_copies(self):
+		kept = _file(name="K", file_url="/files/k.png")
+		first = _file(name="C1", file_url="/files/a.png", is_private=0, sharing_link="111")
+		second = _file(name="C2", file_url="/files/a.png", is_private=0, sharing_link="222")
+		outcome = _Outcome()
+
+		with (
+			patch.object(file_merge, "move_associations", return_value=0),
+			patch.object(frappe.db, "set_value"),
+		):
+			changes = _fold_copy_records([first, second], kept, outcome)
+
+		# The first link moves to the kept file; the second then stops working.
+		self.assertEqual(kept.get("sharing_link"), "111")
+		self.assertEqual(
+			changes,
+			[
+				UrlChange("/files/a.png", "/files/k.png"),
+				UrlChange("/files/a.png", "/files/k.png"),
+				UrlChange("/api/method/share?key=222", "/api/method/share?key=111"),
+			],
+		)
+		self.assertEqual(
+			outcome.notes,
+			["2 other File record(s) that used its content were merged into the kept file too."],
+		)
+
 	def test_a_sharing_link_moves_to_a_kept_file_without_one(self):
 		merged, kept = _file(name="M", sharing_link="111"), _file(name="K")
 
-		with patch.object(file_merge, "move_associations", return_value=0), patch.object(frappe.db, "set_value"):
+		with (
+			patch.object(file_merge, "move_associations", return_value=0),
+			patch.object(frappe.db, "set_value"),
+		):
 			self.assertEqual(_move_cloud_storage_records(merged, kept, outcome := _Outcome()), [])
 
 		self.assertEqual(outcome.notes, ["Its sharing link now shares the kept file."])
@@ -402,7 +541,30 @@ class TestMergeWithCloudStorage(DataStewardIntegrationTestCase):
 		meta = MagicMock()
 		meta.has_field.return_value = True
 
-		with patch.object(frappe, "get_meta", return_value=meta), patch.object(frappe, "get_all", return_value=rows):
+		with (
+			patch.object(frappe, "get_meta", return_value=meta),
+			patch.object(frappe, "get_all", return_value=rows),
+		):
 			changes = _scan_changes(_file(name="K", file_url="/files/k.png"), ["M"])
 
 		self.assertEqual(changes, [UrlChange("/api/method/share?key=111", "/files/k.png")])
+
+	def test_cloud_copies_are_scanned_for(self):
+		rows = [frappe._dict(name="M", file_url=f"{RETRIEVE_URL}f/a.png", is_private=0)]
+		copy = frappe._dict(name="C", file_url="/private/files/a.png", is_private=1, sharing_link="333")
+
+		with (
+			patch.object(frappe, "get_all", return_value=rows),
+			patch.object(file_merge, "find_copies", return_value=[copy]) as find,
+		):
+			changes = _scan_changes(_file(name="K", file_url="/files/k.png"), ["M"], cloud=True)
+
+		find.assert_called_once_with(rows[0], exclude={"M", "K"})
+		self.assertEqual(
+			changes,
+			[
+				UrlChange(f"{RETRIEVE_URL}f/a.png", "/files/k.png"),
+				UrlChange("/private/files/a.png", "/files/k.png", old_fid="C"),
+				UrlChange("/api/method/share?key=333", "/files/k.png"),
+			],
+		)
