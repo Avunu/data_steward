@@ -10,6 +10,7 @@ from frappe.model.document import Document
 capability_name = Literal[
 	"global_bulk_merge",
 	"item_convert_to_variant",
+	"file_merge",
 	"payment_entry_set_clearance_date",
 	"journal_entry_manually_clear",
 	"journal_entry_remove_clearance",
@@ -18,6 +19,7 @@ capability_name = Literal[
 capabilities = {
 	"global_bulk_merge": "Bulk Merge",
 	"item_convert_to_variant": "Convert to Variant",
+	"file_merge": "File Merge",
 	"payment_entry_set_clearance_date": "Payment Entry Set Clearance Date",
 	"journal_entry_manually_clear": "Journal Entry Manually Clear",
 	"journal_entry_remove_clearance": "Journal Entry Remove Clearance",
@@ -33,6 +35,7 @@ class DataStewardSettings(Document):
 	if TYPE_CHECKING:
 		from frappe.types import DF
 
+		file_merge: DF.Check
 		global_bulk_merge: DF.Check
 		item_convert_to_variant: DF.Check
 		journal_entry_manually_clear: DF.Check

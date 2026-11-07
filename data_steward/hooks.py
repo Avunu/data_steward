@@ -28,7 +28,11 @@ doctype_js = {
 	"Item": "public/js/item.js",
 	"Payment Entry": "public/js/payment_entry.js",
 	"Journal Entry": "public/js/journal_entry.js",
+	"File": "public/js/file.js",
 }
+
+# Frappe's File list (the File Manager) is its own view; this adds Merge Files to it.
+doctype_list_js = {"File": "public/js/file_list.js"}
 
 # The desk side panel's preview, plus which fields the user may change there (side_panel.py).
 override_whitelisted_methods = {

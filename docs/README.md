@@ -3,7 +3,7 @@ title: Data Steward
 description: Merge duplicate records, convert Items to variants and correct bank clearance dates in ERPNext, each tool off until an administrator enables it.
 nav_title: Overview
 order: 0
-updated: 2026-11-02
+updated: 2026-11-07
 ---
 
 Frappe and ERPNext make some corrections hard on purpose. A duplicate Customer cannot be folded into another from its form, an Item cannot become a variant once it exists, and the clearance date of a submitted Payment Entry or Journal Entry cannot be edited. Data Steward adds a small set of tools for the administrator who cleans up real data and does need to make those changes.
@@ -17,6 +17,10 @@ Every tool is off until a System Manager enables it in **Data Steward Settings**
 A **Merge Selected** action in the list view of every DocType that allows renaming. Tick two or more records, pick the one to keep, and Frappe's own rename-and-merge folds the others into it. See [Merge duplicate records](merge-records.md).
 
 ![Three duplicate Customers ticked in the list view, and the Merge Records dialog asking which one to keep](screenshots/merge-records-light.webp)
+
+### File merge
+
+A **Merge Files** action in the File Manager and **Actions → Merge into...** on a file fold duplicate files into one. Every Attach field, rich-text field and link that used a duplicate uses the kept file instead, and the duplicates and their unused content are removed, also for files the cloud_storage app keeps in S3. See [Merge duplicate files](file-merge.md).
 
 ### Convert an Item to a variant
 
@@ -48,6 +52,7 @@ The desk uses the full width of the screen in a browser that has no width stored
 | ------------------------------------- | ------------------------------------------------------------------------------------ |
 | The administrator setting it up       | [Install and upgrade](install.md), then [Configuration](configuration.md)            |
 | A System Manager cleaning up records  | [Merge duplicate records](merge-records.md)                                          |
+| A System Manager cleaning up files    | [Merge duplicate files](file-merge.md)                                               |
 | An Item Manager fixing the item list  | [Convert an Item to a variant](convert-to-variant.md)                                |
 | An Accounts Manager fixing clearances | [Correct clearance dates](clearance-dates.md)                                        |
 | Anyone working from report views      | [Edit in the side panel](side-panel.md)                                              |
@@ -58,7 +63,7 @@ The desk uses the full width of the screen in a browser that has no width stored
 
 - A bench with Frappe v16. The app declares `frappe >=16.0.0,<17.0.0`.
 - ERPNext v16 (`erpnext >=16.0.0,<17.0.0`) on the same site. `hooks.py` lists it in `required_apps`, so install ERPNext first and Data Steward after it.
-- A System Manager to switch the tools on, and users with the roles each tool needs: System Manager for bulk merge, Item Manager for Convert to Variant, Accounts Manager for the clearance tools.
+- A System Manager to switch the tools on, and users with the roles each tool needs: System Manager for bulk merge and file merge, Item Manager for Convert to Variant, Accounts Manager for the clearance tools.
 
 > [!NOTE]
 > These pages describe the code in the repository. Where a statement depends on Frappe's or ERPNext's own behaviour, it was checked against Frappe 16.52 and ERPNext 16.51.

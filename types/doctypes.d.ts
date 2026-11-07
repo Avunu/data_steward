@@ -4404,6 +4404,8 @@ declare global {
 			name: "Data Steward Settings";
 			/** Allow Convert to Variant · Check */
 			item_convert_to_variant?: 0 | 1;
+			/** Allow File Merge · Check */
+			file_merge?: 0 | 1;
 			/** Allow Bulk Merge · Check */
 			global_bulk_merge?: 0 | 1;
 			/** Set Clearance Date · Check */

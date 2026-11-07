@@ -37,6 +37,7 @@ Full documentation: [docs.avunu.net/data-steward/docs/](https://docs.avunu.net/d
 ## Features
 
 - **Bulk merge.** A **Merge Selected** action in the list view of every DocType that allows renaming: tick two or more records, pick the one to keep, and the others are merged into it with Frappe's own rename-and-merge. System Manager only. See [docs/merge-records.md](docs/merge-records.md).
+- **File merge.** A **Merge Files** action in the File list (the File Manager) and **Actions → Merge into...** on a File: pick the file to keep, and every Attach field, rich-text field and link that used the others uses it instead; the others are deleted, and their content too once no file uses it. Works with the cloud_storage app's S3 files and attachment records when a site has it. System Manager only. See [docs/file-merge.md](docs/file-merge.md).
 - **Convert an Item to a variant.** **Actions → Convert to Variant** on the Item form: choose a template Item, pick a value for each of its attributes, and the Item becomes a variant of that template. Item Manager or System Manager. See [docs/convert-to-variant.md](docs/convert-to-variant.md).
 - **Payment Entry clearance date.** A **Set Clearance Date** button on a submitted Payment Entry sets or changes the date in a dialog. As in ERPNext's Bank Clearance tool, the date can't be before the entry's Cheque/Reference Date. Accounts Manager or System Manager.
 - **Journal Entry clearance.** **Actions → Manually Clear** on a submitted Journal Entry sets the clearance date to the date of the Bank Transaction the entry is matched to, and refuses it when that date is before the entry's Reference Date (cheque date); **Actions → Remove Clearance** clears it again. Accounts Manager or System Manager. See [docs/clearance-dates.md](docs/clearance-dates.md).
@@ -77,15 +78,16 @@ Data Steward needs ERPNext on the same site.
 
 Open **Data Steward Settings** (search for it in the awesome bar) as a System Manager and tick only the tools you need:
 
-| Setting                  | Tool                                       | Who can use it                   |
-| ------------------------ | ------------------------------------------ | -------------------------------- |
-| Allow Bulk Merge         | Merge Selected, in renamable list views    | System Manager                   |
-| Allow Convert to Variant | Item → Actions → Convert to Variant        | Item Manager, System Manager     |
-| Set Clearance Date       | Payment Entry → Set Clearance Date         | Accounts Manager, System Manager |
-| Manually Clear           | Journal Entry → Actions → Manually Clear   | Accounts Manager, System Manager |
-| Remove Clearance         | Journal Entry → Actions → Remove Clearance | Accounts Manager, System Manager |
+| Setting                  | Tool                                                          | Who can use it                   |
+| ------------------------ | ------------------------------------------------------------- | -------------------------------- |
+| Allow Bulk Merge         | Merge Selected, in renamable list views                       | System Manager                   |
+| Allow Convert to Variant | Item → Actions → Convert to Variant                           | Item Manager, System Manager     |
+| Allow File Merge         | Merge Files, in the File list; File → Actions → Merge into... | System Manager                   |
+| Set Clearance Date       | Payment Entry → Set Clearance Date                            | Accounts Manager, System Manager |
+| Manually Clear           | Journal Entry → Actions → Manually Clear                      | Accounts Manager, System Manager |
+| Remove Clearance         | Journal Entry → Actions → Remove Clearance                    | Accounts Manager, System Manager |
 
-Every tool also needs one of its roles and write permission on the document; a merge also needs delete permission on the records merged. Buttons for a tool that is switched off are not shown, and its endpoint refuses the call. Each setting, role and permission is described in [docs/configuration.md](docs/configuration.md).
+Every tool also needs one of its roles and write permission on the document; a merge also needs delete permission on the records or files merged. Buttons for a tool that is switched off are not shown, and its endpoint refuses the call. Each setting, role and permission is described in [docs/configuration.md](docs/configuration.md).
 
 **Coming from Jailbreak.** Data Steward replaces the earlier `jailbreak` app. Install `data_steward` while `jailbreak` is still installed, so the install copies the five toggles from Jailbreak Settings, then uninstall `jailbreak`. See [docs/install.md](docs/install.md#coming-from-jailbreak).
 
@@ -93,6 +95,7 @@ Every tool also needs one of its roles and write permission on the document; a m
 
 - Every endpoint first checks that its tool is on in **Data Steward Settings** (`assert_capability`), then the role, then the user's permission on the document. The desk asks `data_steward.api.check_capability` before it shows a button.
 - **Bulk merge** extends the desk's `ListView` class to add **Merge Selected**, and calls Frappe's `bulk_rename` with the merge flag, so each record is merged, committed and logged on its own.
+- **File merge** rewrites the merged files' URLs in every Attach and rich-text field with one query per field, keeps an attached file on its document as an attachment of the kept file (or, with cloud_storage, moves its File Association rows), deletes the rest, and removes their content after the commit only when no File record uses it.
 - **Convert to Variant** writes the set-once `variant_of` field directly, replaces the Item's attributes with the template's, takes the template's stock UOM when it differs, and saves the Item through ERPNext's validation.
 - **The clearance tools** check the date against the cheque date, as ERPNext's Bank Clearance tool does, and write `clearance_date` directly on the submitted entry.
 - **The side panel** is Frappe's own, patched as its lazy bundle defines it: the controls take the form's field rules instead of being forced read-only, and Save posts only the changed fields with the copy's `modified` to `data_steward.side_panel.save`, so a stale copy is refused. `data_steward.side_panel.get_preview` replaces Frappe's preview to add the permission levels the user may change.
@@ -103,7 +106,7 @@ The details are in [docs/development/architecture.md](docs/development/architect
 ## Limitations
 
 - **Clearance changes skip the document's own validation.** The date is checked the way ERPNext's Bank Clearance tool checks it (not before the cheque date), but it is then written straight to the database, so ERPNext does not re-check it against the bank account or the Bank Reconciliation.
-- **A merge cannot be undone**, and the merged records' own field values are not copied to the record kept.
+- **A merge cannot be undone**, and the merged records' own field values are not copied to the record kept. A file merge only rewrites URLs in Attach and rich-text fields, written straight to the database.
 - **The side panel runs no form scripts.** Their link filters, fetches and recalculations do not happen there, and child tables are read-only; the server's validation checks each change.
 - **Convert to Variant copies only the attributes and the stock unit**, and ERPNext's check for an existing variant with the same attribute values does not run on a converted Item.
 

@@ -3,7 +3,7 @@ title: Develop Data Steward
 description: The dev shell, the commands and tests, CI and the release flow of the Data Steward repository, and how to add a tool.
 nav_title: Development
 order: 9
-updated: 2026-11-02
+updated: 2026-11-07
 ---
 
 This page is for people changing the app. [How it works](architecture.md) explains the code behind each tool. The managed files, the shared checks and the release flow are described once for every Avunu app in the [app standards documentation](https://docs.avunu.net/frappe-nix/docs/app-standards/); this page covers what is specific to this repository.
@@ -44,13 +44,16 @@ data_steward/
     doctype/data_steward_settings/   the Single, plus assert_capability, check_capability, require_roles
     hooks/
       __init__.py                bulk_merge
+      file.py                    merge_files: the URL and link rewrite, the per-file savepoints
+      file_storage.py            where a File's content lives, cloud_storage's records, removing unused content
       item.py                    convert_to_variant
       payment_entry.py           set_clearance_date
       journal_entry.py           manually_clear_journal_entry, remove_clearance_date_journal_entry
       clearance.py               the cheque-date check both clearance tools share
   public/js/
-    data_steward.bundle.js       the desk bundle: data_steward.js, merge_records.js, full_width.js, side_panel.js
-    item.js, payment_entry.js, journal_entry.js   the form scripts
+    data_steward.bundle.js       the desk bundle: data_steward.js, merge_records.js, file_merge.js, full_width.js, side_panel.js
+    item.js, payment_entry.js, journal_entry.js, file.js   the form scripts
+    file_list.js                 the File list script: Merge Files
   tests/                         the shared test case, factories, install and demo tests
 types/                           DocType types and the app's desk globals, for yarn typecheck
 marketplace/                     the marketplace listing and the screenshot spec
@@ -58,7 +61,7 @@ marketplace/                     the marketplace listing and the screenshot spec
 
 ## Tests
 
-The tests live next to the code they cover (`test_*.py`) and in `data_steward/tests/`. Every test class extends `DataStewardIntegrationTestCase` (`data_steward/tests/__init__.py`). Its `capability_enabled(...)` context manager switches one tool on for the length of a test, and it stubs `frappe.db.commit`, because Frappe's `bulk_rename` commits after each row, and rolls back after the class. `data_steward/tests/factories.py` makes the Items, bank accounts, Bank Transactions, Payment Entries and Journal Entries the tests need, all named with a `_DS Test` prefix.
+The tests live next to the code they cover (`test_*.py`) and in `data_steward/tests/`. Every test class extends `DataStewardIntegrationTestCase` (`data_steward/tests/__init__.py`). Its `capability_enabled(...)` context manager switches one tool on for the length of a test, and it stubs `frappe.db.commit`, because Frappe's `bulk_rename` commits after each row, and rolls back after the class. The file merge's cloud_storage paths are tested with fakes in `test_file_storage.py`, because CI's site does not have that app. `data_steward/tests/factories.py` makes the Files, Items, bank accounts, Bank Transactions, Payment Entries and Journal Entries the tests need, all named with a `_DS Test` prefix.
 
 `test_write_contract.py` checks the rules every endpoint follows: the endpoints that change data accept POST only, they leave the commit to the request, and an error after the write rolls it back. The coverage floor is `fail_under = 95` in `pyproject.toml`.
 

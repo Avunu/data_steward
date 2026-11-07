@@ -22,6 +22,7 @@ import frappe
 from frappe.model.document import Document
 
 from data_steward.data_steward.hooks import bulk_merge
+from data_steward.data_steward.hooks.file import merge_files
 from data_steward.data_steward.hooks.item import convert_to_variant
 from data_steward.data_steward.hooks.journal_entry import (
 	manually_clear_journal_entry,
@@ -31,6 +32,7 @@ from data_steward.data_steward.hooks.payment_entry import set_clearance_date
 from data_steward.tests import DataStewardIntegrationTestCase
 from data_steward.tests.factories import (
 	make_cleared_journal_entry,
+	make_file,
 	make_item,
 	make_item_template,
 	make_journal_entry,
@@ -56,6 +58,7 @@ class TestPostOnly(DataStewardIntegrationTestCase):
 			remove_clearance_date_journal_entry,
 			set_clearance_date,
 			bulk_merge,
+			merge_files,
 		):
 			with self.subTest(endpoint=fn.__name__):
 				self.assertEqual(frappe.allowed_http_methods_for_whitelisted_func[fn], ["POST"])
@@ -136,16 +139,19 @@ class TestEndpointsDoNotCommit(DataStewardIntegrationTestCase):
 		template = make_item_template()
 		je = make_cleared_journal_entry(clearance_date="2020-02-02")
 		pe = make_payment_entry(reference_no="_DS-NOCOMMIT-PE-1")
+		kept, merged = make_file(), make_file()
 
 		with (
 			self.capability_enabled("item_convert_to_variant"),
 			self.capability_enabled("journal_entry_manually_clear"),
 			self.capability_enabled("journal_entry_remove_clearance"),
 			self.capability_enabled("payment_entry_set_clearance_date"),
+			self.capability_enabled("file_merge"),
 		):
 			_commit_mock().reset_mock()
 			convert_to_variant(item.name, template.name, {"Colour": "Red"})
 			manually_clear_journal_entry(je.name)
 			remove_clearance_date_journal_entry(je.name)
 			set_clearance_date(pe.name, "2021-06-15")
+			merge_files(kept.name, [merged.name])
 			_commit_mock().assert_not_called()

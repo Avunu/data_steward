@@ -56,6 +56,9 @@
 		{
 			"files": [
 				"data_steward/public/js/data_steward.js",
+				"data_steward/public/js/file.js",
+				"data_steward/public/js/file_list.js",
+				"data_steward/public/js/file_merge.js",
 				"data_steward/public/js/full_width.js",
 				"data_steward/public/js/item.js",
 				"data_steward/public/js/journal_entry.js",

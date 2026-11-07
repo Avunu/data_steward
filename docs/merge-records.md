@@ -3,7 +3,7 @@ title: Merge duplicate records
 description: Tick duplicate records in a list view, choose the one to keep, and merge the others into it with Frappe's own rename-and-merge.
 nav_title: Merge records
 order: 3
-updated: 2026-10-26
+updated: 2026-11-07
 ---
 
 Bulk merge folds duplicate records into one, for example three Customers that are the same company entered three times. It uses Frappe's own rename with the merge option, the same thing as renaming a record to the name of another and ticking **Merge with existing**, done for several records at once.
@@ -49,4 +49,5 @@ Each record is merged and committed on its own. If one fails, for example becaus
 
 ## Related
 
+- [Merge duplicate files](file-merge.md), for File records, which documents refer to by URL
 - [Limitations and troubleshooting](troubleshooting.md)

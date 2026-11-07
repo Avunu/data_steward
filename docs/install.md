@@ -3,7 +3,7 @@ title: Install and upgrade
 description: Install Data Steward on a Frappe v16 bench with ERPNext, see what the install sets up, upgrade it, move over from Jailbreak and uninstall it.
 nav_title: Install
 order: 1
-updated: 2026-10-26
+updated: 2026-11-07
 ---
 
 Data Steward installs like any Frappe app. It has no build step of its own beyond Frappe's asset build, no patches, and nothing to configure before the first use: every tool stays off until you enable it.
@@ -27,9 +27,9 @@ bench --site <SITE_NAME> install-app data_steward
 
 ## What installing sets up
 
-Installing the app creates the **Data Steward Settings** DocType, a Single in the Data Steward module, with all five check boxes unticked. It adds no custom fields, property setters, roles, records or scheduled jobs, and it has no patches.
+Installing the app creates the **Data Steward Settings** DocType, a Single in the Data Steward module, with all six check boxes unticked. It adds no custom fields, property setters, roles, records or scheduled jobs, and it has no patches.
 
-The desk loads `data_steward.bundle.js` on every page and the form scripts for Item, Payment Entry and Journal Entry. They only add buttons when a tool is enabled, apart from the [full-width default](configuration.md#full-width-desk).
+The desk loads `data_steward.bundle.js` on every page and the form scripts for Item, Payment Entry, Journal Entry and File, and a list script for File. They only add buttons when a tool is enabled, apart from the [full-width default](configuration.md#full-width-desk).
 
 The app's `after_install` hook (`data_steward.install.after_install`) copies the tool settings from **Jailbreak Settings** when that DocType exists on the site. On a site that never had the old `jailbreak` app it does nothing.
 
