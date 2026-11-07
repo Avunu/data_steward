@@ -263,3 +263,24 @@ def make_user(email: str, *roles: str) -> User:
 	user.set("roles", [])
 	user.add_roles(*roles)
 	return user
+
+
+def make_file(
+	content: bytes | None = None, *, file_name: str = f"{PREFIX} file.txt", is_private: int = 0, **fields: Any
+) -> Any:
+	"""A File with `content` (a new random content when None), written to the
+	test site's files, owned by the session user. Frappe's own rollback
+	removes the content again when the test's transaction is rolled back."""
+	if content is None:
+		content = frappe.generate_hash(length=32).encode()
+	return _insert(
+		frappe.get_doc(
+			{
+				"doctype": "File",
+				"file_name": file_name,
+				"content": content,
+				"is_private": is_private,
+				**fields,
+			}
+		)
+	)

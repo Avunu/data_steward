@@ -9,6 +9,8 @@
   "doctype_features_section",
   "items_column",
   "item_convert_to_variant",
+  "files_column",
+  "file_merge",
   "accounting_features_section",
   "payment_entry_column",
   "payment_entry_set_clearance_date",
@@ -48,10 +50,21 @@
    "label": "Journal Entry"
   },
   {
+   "fieldname": "files_column",
+   "fieldtype": "Column Break",
+   "label": "Files"
+  },
+  {
    "default": "0",
    "fieldname": "item_convert_to_variant",
    "fieldtype": "Check",
    "label": "Allow Convert to Variant"
+  },
+  {
+   "default": "0",
+   "fieldname": "file_merge",
+   "fieldtype": "Check",
+   "label": "Allow File Merge"
   },
   {
    "default": "0",
@@ -82,7 +95,7 @@
  "index_web_pages_for_search": 0,
  "issingle": 1,
  "links": [],
- "modified": "2026-10-19 12:00:00.000000",
+ "modified": "2026-11-07 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Data Steward",
  "name": "Data Steward Settings",

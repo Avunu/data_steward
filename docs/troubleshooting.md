@@ -3,7 +3,7 @@ title: Limitations and troubleshooting
 description: What Data Steward's tools do not do, and the messages they show, with the cause and the fix for each.
 nav_title: Troubleshooting
 order: 8
-updated: 2026-11-02
+updated: 2026-11-07
 ---
 
 ## Limitations
@@ -13,6 +13,7 @@ updated: 2026-11-02
 - **Manually Clear takes the first match.** When more than one Bank Transaction lists a Journal Entry, the date of whichever one the database returns first is used.
 - **The form is not reloaded after a clearance change.** Reload it to see the new **Clearance Date**.
 - **A merge cannot be undone.** The merged records are deleted, and their own field values and child table rows are not copied to the record you keep. At most 500 records can be merged in one run, and a submitted document cannot be merged.
+- **A file merge cannot be undone.** The merged files are deleted and their content is removed once no file uses it. Only Attach, Attach Image, Text Editor, HTML Editor, Markdown Editor, Long Text and Code fields are searched for their URLs, and the documents changed are written straight to the database, submitted ones included. Files stored in different places (on the site, in cloud storage, at an external address) cannot be merged into each other. See [Merge duplicate files](file-merge.md#limits).
 - **Convert to Variant copies only the attributes and the stock unit.** Nothing else comes from the template, and ERPNext's check for another variant with the same attribute values does not run on a converted Item. A template based on Manufacturer, or one with a numeric attribute, cannot be used.
 - **Buttons do not check roles.** While a tool is enabled, its button is shown to everyone who can open the form or list; the server refuses the call from a user without the role.
 - **The side panel runs no form scripts.** Link filters, fetched values and recalculations that a DocType's form script adds do not happen in the panel; the server's validation is what checks a change. Child tables are read-only there. See [Edit in the side panel](side-panel.md#limits).
@@ -27,6 +28,7 @@ The tool is off in **Data Steward Settings**, or the document is not in a state 
 
 - the tool's check box is ticked in **Data Steward Settings** (see [Configuration](configuration.md));
 - for **Merge Selected**, the DocType has **Allow Rename** set, and you ticked at least one row so the **Actions** menu shows;
+- for **Merge Files**, you are in the File list and ticked at least one file; for **Merge into...**, the file is saved and is not a folder;
 - for **Convert to Variant**, the Item is saved;
 - for the clearance tools, the entry is submitted.
 
@@ -79,6 +81,24 @@ Fix: tick the duplicates and the record to keep, then try again.
 The line ends with the error Frappe raised for that record, and that record was left as it was. Common causes: missing write or delete permission, a submitted document (Frappe cannot delete it), or a rule of the DocType itself that refuses the rename.
 
 Fix: correct the cause named in the line and merge that record again.
+
+### "Please select at least two files to merge."
+
+You clicked **Merge Files** with fewer than two files ticked, or "Only files can be merged. Untick the folders." with a folder among them.
+
+Fix: tick the duplicate files and the one to keep, and no folders.
+
+### A "Failed" line in the File Merge Log
+
+That file was left as it was, and the line says why: it is the file you keep, it is a folder, it no longer exists, it is private while the kept file is public (or the other way around), it is stored in a different place, or you lack delete permission on it. Frappe gives that permission on a file you uploaded, on one attached to a document you may change, or on one shared with you; the System Manager role alone is not enough.
+
+Fix: correct the cause, or merge that file as the user who uploaded it or as Administrator.
+
+### "The content of `<FILE>` (`<URL>`) is missing, so nothing can be merged into it."
+
+The file you chose to keep has no content on the site's disk or in the cloud storage bucket, so merging into it would leave every document pointing at nothing. Nothing was changed.
+
+Fix: keep another file, or upload the content again first.
 
 ### "Maximum 500 rows allowed"
 
