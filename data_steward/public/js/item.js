@@ -30,6 +30,7 @@ frappe.ui.form.on("Item", {
  */
 function show_variant_dialog(frm) {
 	// First dialog to select the template
+	/** @type {frappe.ui.Dialog<{ template_item: string }>} */
 	let template_dialog = new frappe.ui.Dialog({
 		title: __("Select Template Item"),
 		fields: [
@@ -46,7 +47,7 @@ function show_variant_dialog(frm) {
 		],
 		primary_action_label: __("Next"),
 		primary_action: function () {
-			let template = /** @type {string | null | undefined} */ (template_dialog.get_value("template_item"));
+			let template = template_dialog.get_value("template_item");
 			if (template) {
 				load_attributes_and_show_dialog(template);
 				template_dialog.hide();
@@ -58,7 +59,7 @@ function show_variant_dialog(frm) {
 
 	/** @param {string} template */
 	function load_attributes_and_show_dialog(template) {
-		/** @type {Promise<frappe.Doc<"Item">>} */ (frappe.db.get_doc("Item", template)).then((template_doc) => {
+		frappe.db.get_doc("Item", template).then((template_doc) => {
 			let attributes = template_doc.attributes || [];
 			if (!attributes.length) {
 				frappe.msgprint(__("This template has no attributes."));
@@ -67,9 +68,7 @@ function show_variant_dialog(frm) {
 
 			// Get all attribute data
 			let promises = attributes.map((attr) => {
-				return /** @type {Promise<frappe.Doc<"Item Attribute">>} */ (
-					frappe.db.get_doc("Item Attribute", attr.attribute)
-				);
+				return frappe.db.get_doc("Item Attribute", attr.attribute);
 			});
 
 			Promise.all(promises).then((attr_docs) => {
