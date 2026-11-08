@@ -18,31 +18,22 @@
  * @typedef {import("frappe-types").BaseControl} BaseControl
  * @typedef {import("frappe-types").DisplayStatus} DisplayStatus
  * @typedef {import("frappe-types").DocField} DocField
+ * @typedef {import("frappe-types").DocPreview} DocPreview
  * @typedef {import("frappe-types").FrappeDoc} FrappeDoc
  * @typedef {import("frappe-types").Form} Form
- * @typedef {import("frappe-types").Layout} Layout
  * @typedef {import("frappe-types").Permission} Permission
  * @typedef {import("frappe-types").SidePanel} SidePanel
  */
 
 /**
- * What frappe.desk.doc_preview.get_preview returns, with data_steward.side_panel's addition.
- * @typedef {object} SidePanelPreview
- * @property {FrappeDoc} doc the document, with the fields of unreadable permlevels blanked
- * @property {number[]} permlevels the permlevels the user may read
- * @property {number[]} [write_permlevels] the permlevels the user may change
+ * What frappe.desk.doc_preview.get_preview returns, with data_steward.side_panel's addition: the
+ * permlevels the user may change.
+ * @typedef {DocPreview & { write_permlevels?: number[] }} SidePanelPreview
  */
 
 /**
- * The members of frappe.ui.SidePanel used here (frappe-types declares its public API only), and
- * the ones this file adds.
+ * frappe.ui.SidePanel with the members this file adds.
  * @typedef {SidePanel & {
- *   previews: Record<string, SidePanelPreview>,
- *   make_buttons(): void,
- *   render_doc(doctype: string, preview: SidePanelPreview): void,
- *   show_preview(doctype: string, docname: string, preview: SidePanelPreview): void,
- *   prepare_grids(layout: Layout, doc: FrappeDoc): void,
- *   make_rows_openable(layout: Layout): void,
  *   update_editing_state(): void,
  *   editor?: Editor,
  *   editors?: Record<string, Editor>,
@@ -84,7 +75,7 @@ function same_value(fieldtype, a, b) {
 function get_docfields(doctype) {
 	return (frappe.get_meta(doctype)?.fields || []).map((df) => {
 		// A copy: the meta's own docfields must stay as they are.
-		/** @type {DocField & { fields?: DocField[] }} */
+		/** @type {DocField} */
 		const clone = Object.assign({}, df, { parent: df.parent || doctype });
 		if (TABLE_FIELDTYPES.has(df.fieldtype) && typeof df.options === "string" && df.options) {
 			clone.fields = get_docfields(df.options);
@@ -177,13 +168,10 @@ class Editor {
 		};
 
 		// Link fetches its fetch_from values through this when there is no frm (link.js).
-		Object.assign(layout, {
-			/** @param {string} fieldname @param {unknown} value */
-			set_value: (fieldname, value) => {
-				const control = layout.fields_dict[fieldname];
-				if (control instanceof frappe.ui.form.Control) control.set_value(value);
-			},
-		});
+		layout.set_value = (fieldname, value) => {
+			const control = layout.fields_dict[fieldname];
+			if (control instanceof frappe.ui.form.Control) control.set_value(value);
+		};
 	}
 
 	/** @param {BaseControl} control */
@@ -205,10 +193,10 @@ class Editor {
 			// set_value has set them through their own controls already.
 			control.after_set_value = () => {};
 		}
-		if (control.df.fieldtype === "Dynamic Link") {
+		if (control instanceof frappe.ui.form.ControlDynamicLink) {
 			// Without a frm or a dialog, Dynamic Link looks for its doctype in locals or cur_list.
 			const doctype_field = String(control.df.options || "");
-			Object.assign(control, { get_options: () => String(this.doc[doctype_field] ?? "") });
+			control.get_options = () => String(this.doc[doctype_field] ?? "");
 		}
 	}
 
@@ -253,10 +241,10 @@ class Editor {
 		this.changed.clear();
 
 		const writable = workflow_allows_edit(this.doctype, doc)
-			? (preview.write_permlevels || []).map(cint)
+			? (preview.write_permlevels || []).map((permlevel) => cint(permlevel))
 			: [];
 		this.perm = [];
-		for (const level of (preview.permlevels || []).map(cint)) {
+		for (const level of (preview.permlevels || []).map((permlevel) => cint(permlevel))) {
 			this.perm[level] = { permlevel: level, read: 1, write: writable.includes(level) ? 1 : 0 };
 		}
 
@@ -382,9 +370,8 @@ async function save(panel) {
 		if (!editor?.preview || !Object.keys(values).length) return;
 
 		const { doctype, name, modified } = editor.preview.doc;
-		const preview = /** @type {SidePanelPreview} */ (
-			await frappe.xcall("data_steward.side_panel.save", { doctype, name, values, modified })
-		);
+		/** @type {SidePanelPreview} */
+		const preview = await frappe.xcall("data_steward.side_panel.save", { doctype, name, values, modified });
 		panel.previews[`${doctype}/${name}`] = preview;
 		// The panel may have moved on while the request ran.
 		if (panel.is_open() && panel.current?.doctype === doctype && panel.current.docname === name) {
