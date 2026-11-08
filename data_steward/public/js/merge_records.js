@@ -37,12 +37,13 @@ frappe.ui.merge_records = {
 						doctype: listview.doctype,
 						rows: docs_to_merge.map((doc) => [doc, merge_into, "true"]),
 					},
+					/** @param {import("frappe-types").FrappeResponse<string[]>} r */
 					callback: function (r) {
 						if (r.message) {
 							listview.clear_checked_items();
 							listview.refresh();
 							// bulk_rename returns one line per record, merged or failed
-							const log = /** @type {string[]} */ (r.message);
+							const log = r.message;
 							if (log.length) {
 								frappe.msgprint({
 									title: __("Merge Log"),
@@ -62,35 +63,32 @@ frappe.ui.merge_records = {
 // Override the ListView class (the desk bundle loads after frappe's, so it is defined)
 const BaseListView = frappe.views.ListView;
 if (BaseListView) {
-	// The cast restores the generic constructor type (`ListView<TColumn>`) that a subclass loses.
-	frappe.views.ListView = /** @type {typeof BaseListView} */ (
-		class extends BaseListView {
-			/** @param {ConstructorParameters<NonNullable<typeof frappe.views.ListView>>[0]} opts */
-			constructor(opts) {
-				super(opts);
-				this.merge_button_added = false;
-			}
+	frappe.views.ListView = class extends BaseListView {
+		/** @param {ConstructorParameters<NonNullable<typeof frappe.views.ListView>>[0]} opts */
+		constructor(opts) {
+			super(opts);
+			this.merge_button_added = false;
+		}
 
-			/** @override */
-			setup_page() {
-				super.setup_page();
-				this.add_merge_button();
-			}
+		/** @override */
+		setup_page() {
+			super.setup_page();
+			this.add_merge_button();
+		}
 
-			add_merge_button() {
-				// Frappe only renames (and so merges) DocTypes with Allow Rename set
-				if (!this.merge_button_added && this.meta?.allow_rename) {
-					// Check if global bulk merge capability is enabled
-					data_steward.check_capability("global_bulk_merge").then((enabled) => {
-						if (enabled) {
-							this.page.add_action_item(__("Merge Selected"), () => {
-								frappe.ui.merge_records.merge_selected_records(this);
-							});
-						}
-					});
-					this.merge_button_added = true;
-				}
+		add_merge_button() {
+			// Frappe only renames (and so merges) DocTypes with Allow Rename set
+			if (!this.merge_button_added && this.meta?.allow_rename) {
+				// Check if global bulk merge capability is enabled
+				data_steward.check_capability("global_bulk_merge").then((enabled) => {
+					if (enabled) {
+						this.page.add_action_item(__("Merge Selected"), () => {
+							frappe.ui.merge_records.merge_selected_records(this);
+						});
+					}
+				});
+				this.merge_button_added = true;
 			}
 		}
-	);
+	};
 }

@@ -47,8 +47,8 @@ frappe.ui.file_merge = {
 							freeze: true,
 							freeze_message: __("Merging files..."),
 						})
-						.then((r) => {
-							const results = /** @type {DataStewardFileMergeResult[]} */ (r.message || []);
+						.then((/** @type {import("frappe-types").FrappeResponse<DataStewardFileMergeResult[]>} */ r) => {
+							const results = r.message || [];
 							frappe.ui.file_merge.show_log(keep_label, results);
 							resolve(results);
 						})
@@ -95,10 +95,9 @@ frappe.ui.file_merge = {
 	/**
 	 * Add Merge Files to the Actions menu of the File list (Frappe's File
 	 * Manager view, or its Report view), once per view.
-	 * @param {frappe.views.ListView} listview
+	 * @param {frappe.views.ListView | frappe.views.ReportView} view
 	 */
-	add_list_action(listview) {
-		const view = /** @type {frappe.views.ListView & {data_steward_file_merge?: boolean}} */ (listview);
+	add_list_action(view) {
 		if (view.data_steward_file_merge) {
 			return;
 		}
@@ -118,7 +117,7 @@ frappe.ui.file_merge = {
 
 	/**
 	 * The list's Merge Files: pick the file to keep among the ticked ones.
-	 * @param {frappe.views.ListView} listview
+	 * @param {frappe.views.ListView | frappe.views.ReportView} listview
 	 */
 	merge_checked_files(listview) {
 		const checked = listview.get_checked_items();
@@ -129,6 +128,7 @@ frappe.ui.file_merge = {
 			frappe.throw(__("Please select at least two files to merge."));
 		}
 
+		/** @type {frappe.ui.Dialog<{ keep: string }>} */
 		const dialog = new frappe.ui.Dialog({
 			title: __("Merge Files"),
 			fields: [
@@ -151,10 +151,11 @@ frappe.ui.file_merge = {
 				},
 			],
 			primary_action_label: __("Merge"),
+			/** @param {{ keep?: string }} values */
 			primary_action: (values) => {
-				const keep = /** @type {string} */ (values.keep);
+				const keep = values.keep;
 				const kept = checked.find((doc) => doc.name === keep);
-				if (!kept) {
+				if (!keep || !kept) {
 					return;
 				}
 				const files = checked.filter((doc) => doc.name !== keep).map((doc) => doc.name);
@@ -175,6 +176,7 @@ frappe.ui.file_merge = {
 	 * @param {frappe.ui.form.Form<"File">} frm
 	 */
 	merge_into(frm) {
+		/** @type {frappe.ui.Dialog<{ keep: string }>} */
 		const dialog = new frappe.ui.Dialog({
 			title: __("Merge into..."),
 			fields: [
@@ -203,8 +205,12 @@ frappe.ui.file_merge = {
 				},
 			],
 			primary_action_label: __("Merge"),
+			/** @param {{ keep?: string }} values */
 			primary_action: (values) => {
-				const keep = /** @type {string} */ (values.keep);
+				const keep = values.keep;
+				if (!keep) {
+					return;
+				}
 				dialog.hide();
 				frappe.ui.file_merge.confirm_and_merge(keep, keep, [frm.doc.name]).then((results) => {
 					if (results && results.some((result) => result.merged)) {

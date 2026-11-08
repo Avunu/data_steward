@@ -11,6 +11,10 @@
 		if (frappe_refresh) {
 			frappe_refresh.call(this, view);
 		}
-		frappe.ui.file_merge.add_list_action(/** @type {frappe.views.ListView} */ (view));
+		// The File list's views are all ListViews. Not `instanceof frappe.views.ListView`: that is
+		// merge_records.js's subclass by now, which frappe's FileView and ReportView do not extend.
+		if ("get_checked_items" in view) {
+			frappe.ui.file_merge.add_list_action(view);
+		}
 	};
 })();

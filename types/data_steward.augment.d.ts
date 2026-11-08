@@ -41,9 +41,9 @@ declare global {
 		/** Whether the user has the role the server requires: System Manager, or Administrator. */
 		may_merge(): boolean;
 		/** Adds Merge Files to the File list's Actions menu, once per view, for a System Manager when the tool is on. */
-		add_list_action(listview: frappe.views.ListView): void;
+		add_list_action(listview: frappe.views.ListView | frappe.views.ReportView): void;
 		/** The dialog behind the list's Merge Files. */
-		merge_checked_files(listview: frappe.views.ListView): void;
+		merge_checked_files(listview: frappe.views.ListView | frappe.views.ReportView): void;
 		/** The dialog behind the File form's Merge into... */
 		merge_into(frm: frappe.ui.form.Form<"File">): void;
 	}
@@ -64,5 +64,10 @@ declare module "frappe-types" {
 		merge_records: DataStewardMergeRecords;
 		// app-owned: set by file_merge.js in the desk bundle
 		file_merge: DataStewardFileMerge;
+	}
+
+	interface ListView<TColumn> {
+		// app-owned: file_merge.js sets it once it has added Merge Files to the view
+		data_steward_file_merge?: boolean;
 	}
 }
