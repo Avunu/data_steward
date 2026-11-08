@@ -4,8 +4,6 @@
 // Globals this app defines for its own desk scripts. frappe's globals are not
 // declared here: they come from frappe-types.
 
-import type { DisplayStatus, DocField, FrappeDoc, Permission } from "frappe-types";
-
 declare global {
 	/** A capability in Data Steward Settings: `capability_name` in data_steward_settings.py. */
 	type DataStewardCapability =
@@ -66,28 +64,5 @@ declare module "frappe-types" {
 		merge_records: DataStewardMergeRecords;
 		// app-owned: set by file_merge.js in the desk bundle
 		file_merge: DataStewardFileMerge;
-	}
-
-	// Frappe's own, which frappe-types does not declare yet; only what side_panel.js calls.
-	interface Frappe {
-		/** frappe/public/js/frappe/model/perm.js */
-		perm: {
-			/** perm.js:232-308 — "Write", "Read" or "None" for `df` on `doc`, given `perm` by permlevel. */
-			get_field_display_status(
-				df: DocField,
-				doc: FrappeDoc,
-				perm: Permission[],
-				explain?: boolean,
-			): DisplayStatus;
-		};
-		/** frappe/public/js/frappe/model/workflow.js */
-		workflow: {
-			/** workflow.js:22-27 — the workflow's state field, or null when the doctype has no workflow. */
-			get_state_fieldname(doctype: string): string | null;
-			/** workflow.js:28-41 — the first state with this docstatus. */
-			get_default_state(doctype: string, docstatus: number | undefined): string | null;
-			/** workflow.js:43-49 — the roles that may edit a document in `state`. */
-			get_document_state_roles(doctype: string, state: string): string[];
-		};
 	}
 }
