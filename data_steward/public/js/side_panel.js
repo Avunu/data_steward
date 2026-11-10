@@ -378,6 +378,9 @@ async function save(panel) {
 			panel.show_preview(doctype, String(name), preview);
 		}
 		frappe.show_alert({ message: __("Saved"), indicator: "green" });
+		// The panel saves outside any form, so nothing else on the page learns of it.
+		// Pages showing this document (e.g. a report) listen for this to refresh.
+		$(document).trigger("data_steward:saved", [{ doctype, name }]);
 	} catch {
 		// frappe.call has shown the server's message; the edits stay for another try.
 	} finally {
